@@ -17,6 +17,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     var editModde:Bool = false
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
     var savedPins = [Pin]()
+    let flickr = FlickrClient.sharedInstance()
  //   var fetchedResultsController:NSFetchedResultsController = NSFetchedResultsController<Pin>
 
     override func viewDidLoad() {
@@ -111,6 +112,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         } else {
             let photoAlbumVC = self.storyboard?.instantiateViewController(withIdentifier: "PhotoAlbumVC") as? PhotoAlbumViewController
             photoAlbumVC?.location = selectedPin
+            flickr.getPhotosByLocation(longitude: selectedPin.longitude, latitude: selectedPin.latitude, completionHandler: { (success: Bool, restult: [Photo]?, error:String?) in
+                
+            })
             self.navigationController?.pushViewController(photoAlbumVC!, animated: true)
         }
     }
@@ -120,14 +124,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         // Dispose of any resources that can be recreated.
     }
     
-}
-
-extension Double {
-    /// Rounds the double to decimal places value
-    func roundTo(places:Int) -> Double {
-        let divisor = pow(10.0, Double(places))
-        return (self * divisor).rounded() / divisor
-    }
 }
 
 

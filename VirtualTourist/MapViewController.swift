@@ -8,16 +8,21 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class MapViewController: UIViewController, MKMapViewDelegate {
    
     @IBOutlet weak var mapView: MKMapView!
     var longTapGesture:UILongPressGestureRecognizer!
     var editModde:Bool = false
+    let stack = (UIApplication.shared.delegate as! AppDelegate).stack
+    var savedPins = [Pin]()
+ //   var fetchedResultsController:NSFetchedResultsController = NSFetchedResultsController<Pin>
 
-    
     override func viewDidLoad() {
         super.viewDidLoad()
+        getAndDisplayPins()
+        
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Edit", style: UIBarButtonItemStyle.done, target: self, action: #selector(MapViewController.startEditing))
         
         longTapGesture = UILongPressGestureRecognizer(target: self, action: #selector(MapViewController.dropPin))
@@ -44,9 +49,38 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let touchMapCoordinate: CLLocationCoordinate2D = mapView.convert(tapPoint, toCoordinateFrom: mapView)
         
         if UIGestureRecognizerState.began == gestureRecognizer.state {
-            let pin = MKPointAnnotation()
-            pin.coordinate = touchMapCoordinate
-            mapView.addAnnotation(pin)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = touchMapCoordinate
+            mapView.addAnnotation(annotation)
+        }
+        
+        let pin = Pin(longitude: touchMapCoordinate.longitude, latitude: touchMapCoordinate.latitude, context: stack.context)
+        do {
+            try stack.saveContext()
+            print("Saving Pin to DB...")
+        } catch {
+            print("Error saving context to DB")
+        }
+    }
+    
+    func displayPins() {
+        var annotations = [MKPointAnnotation]()
+        for pin in savedPins {
+            let annotation = MKPointAnnotation()
+            annotation.coordinate.longitude = pin.longitude
+            annotation.coordinate.latitude = pin.latitude
+            mapView.addAnnotation(annotation)
+        }
+    }
+    
+    func getAndDisplayPins() {
+        let fetchReq:NSFetchRequest<Pin> = Pin.fetchRequest()
+        do {
+          let results = try stack.context.fetch(fetchReq)
+            savedPins = results
+            displayPins()
+        } catch let error as NSError {
+            print("Error : \(error)")
         }
     }
     

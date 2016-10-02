@@ -26,7 +26,7 @@ class FlickrClient:NSObject {
         return components.url!
     }
     
-    func getPhotosByLocation(longitude: Double, latitude: Double, completionHandler: @escaping (_ success: Bool, _ results: [Photo]?, _ errorString: String?) -> Void){
+    func getPhotosByLocation(longitude: Double, latitude: Double, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ errorString: String?) -> Void){
         let methodParameters: [String: String?] = [
             Constants.FlickrParameterKeys.BoundingBox: createBBox(longitude: longitude, latitude: latitude),
             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
@@ -39,12 +39,11 @@ class FlickrClient:NSObject {
             Constants.FlickrParameterKeys.Page: "1"]
         
         taskForGETMethod(params: methodParameters as [String : AnyObject]) {
-            (results: AnyObject?, error: String?) in
+            (results: [[String: AnyObject]]?, error: String?) in
             if let err = error {
                completionHandler(false, nil, err)
             } else {
-                print("=============== >>>>>>> \(results)")
-                //completionHandler(true, results as! [Photo]?, nil)
+                completionHandler(true, results, nil)
             }
             
         }
@@ -52,7 +51,7 @@ class FlickrClient:NSObject {
         
     }
     
-    func taskForGETMethod(params:[String:AnyObject], completionHandler:@escaping (_ results:AnyObject?, _ error: String?) -> Void) -> URLSessionDataTask {
+    func taskForGETMethod(params:[String:AnyObject], completionHandler:@escaping (_ results:[[String: AnyObject]]?, _ error: String?) -> Void) -> URLSessionDataTask {
         let url = flickrURLWithParams(params: params)
         let session = URLSession.shared
         let request = MutableURLRequest(url: url)
@@ -89,8 +88,21 @@ class FlickrClient:NSObject {
                     sendError(error: "No results were deserialized")
                     return
                 }
+                guard let OKstat = result[Constants.FlickrResponseKeys.Status] as? String, OKstat == Constants.FlickrResponseValues.OKStatus else {
+                    sendError(error: "No images were received from Flickr")
+                    return
+                }
+                guard let photos = result["photos"] as? [String: AnyObject] else {
+                    sendError(error: "No photos were received from Flickr")
+                    return
+                }
                 
-                completionHandler(result, nil)
+                guard let photoCollection = photos["photo"] as? [[String: AnyObject]] else {
+                    sendError(error: "No Photo Collection received from Flickr")
+                    return
+                }
+                
+                completionHandler(photoCollection, nil)
             })
             
         }

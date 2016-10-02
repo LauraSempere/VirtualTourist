@@ -27,7 +27,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         longTapGesture = UILongPressGestureRecognizer(target: self, action: #selector(MapViewController.dropPin))
         longTapGesture.minimumPressDuration = 0.5
-        
         mapView.addGestureRecognizer(longTapGesture)
         mapView.delegate = self
  
@@ -46,20 +45,22 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     func dropPin(gestureRecognizer: UILongPressGestureRecognizer) {
         
         let tapPoint: CGPoint = gestureRecognizer.location(in: mapView)
+       // let roundedPoint:CGPoint = CGPoint(tapPoint.x y: <#T##Double#>)
         let touchMapCoordinate: CLLocationCoordinate2D = mapView.convert(tapPoint, toCoordinateFrom: mapView)
         
         if UIGestureRecognizerState.began == gestureRecognizer.state {
             let annotation = MKPointAnnotation()
             annotation.coordinate = touchMapCoordinate
             mapView.addAnnotation(annotation)
-        }
-        
-        let pin = Pin(longitude: touchMapCoordinate.longitude, latitude: touchMapCoordinate.latitude, context: stack.context)
-        do {
-            try stack.saveContext()
-            print("Saving Pin to DB...")
-        } catch {
-            print("Error saving context to DB")
+            
+            let pin = Pin(longitude: touchMapCoordinate.longitude, latitude: touchMapCoordinate.latitude, context: stack.context)
+            do {
+                try stack.saveContext()
+                print("Saving Pin to DB...")
+            } catch {
+                print("Error saving context to DB")
+            }
+
         }
     }
     
@@ -85,10 +86,27 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        print("Selected Pin :")
-        print(view.annotation?.coordinate.latitude)
         if editModde {
-            mapView.removeAnnotation(view.annotation!)
+            let request:NSFetchRequest = Pin.fetchRequest()
+            let longPredicate = NSPredicate(format: "longitude = %@", argumentArray: [Double((view.annotation?.coordinate.longitude)!)])
+            let latPredicate = NSPredicate(format: "latitude = %@", argumentArray: [Double((view.annotation?.coordinate.latitude)!)])
+            request.predicate = NSCompoundPredicate(type: .and, subpredicates: [longPredicate, latPredicate])
+            
+            do {
+                let results = try stack.context.fetch(request)
+                stack.context.delete(results[0])
+            
+            } catch let error {
+                print("Error fetching request: \(error)")
+            }
+            
+            do {
+                try stack.saveContext()
+                mapView.removeAnnotation(view.annotation!)
+            } catch let error {
+                print("Error saving Context -> \(error)")
+            }
+            
         }
     }
     
@@ -98,4 +116,14 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
 }
+
+extension Double {
+    /// Rounds the double to decimal places value
+    func roundTo(places:Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
+    }
+}
+
+
 

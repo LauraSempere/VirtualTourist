@@ -88,7 +88,6 @@ extension CoreDataStack {
 extension CoreDataStack {
     func getSavedPins(completionHandler:(_ success:Bool, _ results: AnyObject?) -> Void) {
         let fetchReq:NSFetchRequest<Pin> = Pin.fetchRequest()
-        
         print("FetchReq::: \(fetchReq)")
     
     }

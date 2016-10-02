@@ -86,20 +86,21 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        let request:NSFetchRequest = Pin.fetchRequest()
+        let longPredicate = NSPredicate(format: "longitude = %@", argumentArray: [Double((view.annotation?.coordinate.longitude)!)])
+        let latPredicate = NSPredicate(format: "latitude = %@", argumentArray: [Double((view.annotation?.coordinate.latitude)!)])
+        request.predicate = NSCompoundPredicate(type: .and, subpredicates: [longPredicate, latPredicate])
+        var selectedPin:Pin!
+        do {
+            let results = try stack.context.fetch(request)
+            selectedPin = results[0]
+            
+        } catch let error {
+            print("Error fetching request: \(error)")
+        }
+        
         if editModde {
-            let request:NSFetchRequest = Pin.fetchRequest()
-            let longPredicate = NSPredicate(format: "longitude = %@", argumentArray: [Double((view.annotation?.coordinate.longitude)!)])
-            let latPredicate = NSPredicate(format: "latitude = %@", argumentArray: [Double((view.annotation?.coordinate.latitude)!)])
-            request.predicate = NSCompoundPredicate(type: .and, subpredicates: [longPredicate, latPredicate])
-            
-            do {
-                let results = try stack.context.fetch(request)
-                stack.context.delete(results[0])
-            
-            } catch let error {
-                print("Error fetching request: \(error)")
-            }
-            
+            stack.context.delete(selectedPin)
             do {
                 try stack.saveContext()
                 mapView.removeAnnotation(view.annotation!)
@@ -107,6 +108,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 print("Error saving Context -> \(error)")
             }
             
+        } else {
+            let photoAlbumVC = self.storyboard?.instantiateViewController(withIdentifier: "PhotoAlbumVC") as? PhotoAlbumViewController
+            photoAlbumVC?.location = selectedPin
+            self.navigationController?.pushViewController(photoAlbumVC!, animated: true)
         }
     }
     

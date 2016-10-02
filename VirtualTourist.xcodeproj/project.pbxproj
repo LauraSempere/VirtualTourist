@@ -22,6 +22,7 @@
 		DD8C29FD1DA0C4DE0085F9D5 /* PhotoAlbumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C29FC1DA0C4DE0085F9D5 /* PhotoAlbumViewController.swift */; };
 		DD8C2A001DA0DFA20085F9D5 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C29FF1DA0DFA20085F9D5 /* Constants.swift */; };
 		DD8C2A021DA0DFEC0085F9D5 /* FlickrClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */; };
+		DD8C2A051DA107070085F9D5 /* PhotoAlbumCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		DD8C29FC1DA0C4DE0085F9D5 /* PhotoAlbumViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController.swift; sourceTree = "<group>"; };
 		DD8C29FF1DA0DFA20085F9D5 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
+		DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				DD6AFC181DA01C8200F67B1D /* Models */,
+				DD8C2A031DA106C40085F9D5 /* View */,
 				DD6AFC191DA01C8E00F67B1D /* Controllers */,
 				DD7728631D9FDBC5009C8D4C /* AppDelegate.swift */,
 				DD7728671D9FDBC5009C8D4C /* Main.storyboard */,
@@ -125,6 +128,14 @@
 				DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */,
 			);
 			name = Flickr;
+			sourceTree = "<group>";
+		};
+		DD8C2A031DA106C40085F9D5 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */,
+			);
+			name = View;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,6 +226,7 @@
 				DD7728641D9FDBC5009C8D4C /* AppDelegate.swift in Sources */,
 				DD8C2A021DA0DFEC0085F9D5 /* FlickrClient.swift in Sources */,
 				DD7728771D9FDC21009C8D4C /* Model.xcdatamodeld in Sources */,
+				DD8C2A051DA107070085F9D5 /* PhotoAlbumCell.swift in Sources */,
 				DD6AFC1B1DA01D0100F67B1D /* CoreDataStack.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

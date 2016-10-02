@@ -10,16 +10,20 @@ import UIKit
 import MapKit
 import CoreData
 
-class PhotoAlbumViewController: UIViewController {
+class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
     var location:Pin!
+    var photos:[Photo] = [Photo]()
     let flickr = FlickrClient.sharedInstance()
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        collectionView.backgroundColor = UIColor.black
 
         // Do any additional setup after loading the view.
     }
@@ -34,18 +38,39 @@ class PhotoAlbumViewController: UIViewController {
         getSavedImages()
     }
     
+    // MARK: CollectionView
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return 5
+        //return photos.count
+    }
+    
+//    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
+//        return 1
+//    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
+        print("------ Cell ------ \(cell)")
+        cell.activityIndicator.startAnimating()
+        cell.backgroundColor = UIColor.orange
+        return cell
+    }
+
+    
+    // MARK: Core Data
     func getSavedImages() {
         let fetchReq:NSFetchRequest<Photo> = Photo.fetchRequest()
         let pred = NSPredicate(format: "pin = %@", argumentArray: [location])
         fetchReq.predicate = pred
         do {
-            let images = try stack.context.fetch(fetchReq)
-            print("Photos for current Location: \(images)")
+            photos = try stack.context.fetch(fetchReq)
+            print("Photos for current Location: \(photos)")
         } catch let error {
             print("Error getting images: \(error)")
         }
     }
     
+    // MARK: Flickr API
     func getImagesFromFlickr() {
         flickr.getPhotosByLocation(longitude: location.longitude, latitude: location.latitude, completionHandler: { (success: Bool, results: [[String: AnyObject]]?, error:String?) in
             if success {

@@ -19,7 +19,6 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     
     var location:Pin!
     var results:[[String:AnyObject]] = [[String:AnyObject]]()
-    var photos:[Photo] = [Photo]()
     var meta:Meta!
     var cachedPhotos = [Int: Photo]()
     let flickr = FlickrClient.sharedInstance()
@@ -45,24 +44,15 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     }
     
     
-    var fetchedResultsController: NSFetchedResultsController<Photo>? {
-        didSet {
-            fetchedResultsController?.delegate = self
-            executeSearch()
-            collectionView.reloadData()
-        }
-    }
+    lazy var fetchedResultsController: NSFetchedResultsController<Photo> = {
+        let fetchReq:NSFetchRequest<Photo> = Photo.fetchRequest()
+        fetchReq.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
+        let pred = NSPredicate(format: "pin = %@", argumentArray: [self.location])
+        fetchReq.predicate = pred
+        let fc = NSFetchedResultsController(fetchRequest: fetchReq, managedObjectContext: self.stack.context, sectionNameKeyPath: nil, cacheName: nil)
+        return fc
+    }()
     
-    
-    func executeSearch() {
-        if let fc = fetchedResultsController {
-            do {
-                try fc.performFetch()
-            } catch let error {
-                print("Error fetching data: \(error)")
-            }
-        }
-    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -70,7 +60,13 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         collectionView.dataSource = self
         collectionView.allowsMultipleSelection = true
 
-        // Do any additional setup after loading the view.
+        do {
+            try fetchedResultsController.performFetch()
+            print("Hi FC!!!!")
+            print(fetchedResultsController.sections?[0].numberOfObjects)
+        } catch let err {
+            print(err)
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -124,18 +120,15 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     
     // MARK: Core Data
     func getImagesForCurrentLocation(completionHandler: (_ photos:[Photo]?, _ error: Error?) -> Void) {
-        let fetchReq:NSFetchRequest<Photo> = Photo.fetchRequest()
-        let pred = NSPredicate(format: "pin = %@", argumentArray: [location])
-        fetchReq.predicate = pred
         do {
-            photos = try stack.context.fetch(fetchReq)
+            try fetchedResultsController.performFetch()
+            let photos = fetchedResultsController.fetchedObjects
             completionHandler(photos, nil)
-            print("Photos for current Location: \(photos)")
-        } catch let error {
-            completionHandler(nil, error as Error?)
-            print("Error getting images: \(error)")
+        } catch let err {
+            completionHandler(nil, err)
+            print(err)
         }
-    }
+}
     
     func getPhotoById(id: NSManagedObjectID, completionHandler:(_ photo: Photo?, _ error: Error?) -> Void) {
         do {
@@ -182,10 +175,11 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
 extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionViewDelegate {
     // MARK: CollectionView
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if photos.isEmpty {
-            return results.count
+        
+        if let count = fetchedResultsController.sections?[0].numberOfObjects, count > 0 {
+            return count
         } else {
-            return photos.count
+            return results.count
         }
     }
     
@@ -195,8 +189,13 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         cell.activityIndicator.startAnimating()
         cell.image.image = UIImage(named: "placeholder")
         
-        if photos.isEmpty{
+        if let savedPhotosCount = fetchedResultsController.sections?[0].numberOfObjects, savedPhotosCount > 0 {
+            let savedPhoto = fetchedResultsController.object(at: indexPath) as! Photo
+            cell.image.image = UIImage(data: savedPhoto.image as! Data)
+            cell.activityIndicator.stopAnimating()
+            cell.activityIndicator.isHidden = true
             
+        } else {
             if let cachedPhoto = cachedPhotos[indexPath.item] {
                 cell.image.image = UIImage(data: cachedPhoto.image as! Data)
             } else {
@@ -208,11 +207,6 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
                     cell.activityIndicator.isHidden = true
                 }
             }
-            
-        } else {
-            cell.image.image = UIImage(data: photos[indexPath.item].image as! Data)
-            cell.activityIndicator.stopAnimating()
-            cell.activityIndicator.isHidden = true
         }
         
         return cell
@@ -227,7 +221,7 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         var id:NSManagedObjectID!
         
         if cachedPhotos.isEmpty {
-            id = photos[indexPath.item].objectID
+            id = (fetchedResultsController.object(at: indexPath) as! Photo).objectID
         } else {
             id = cachedPhotos[indexPath.item]?.objectID
         }
@@ -256,7 +250,7 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         var id:NSManagedObjectID!
         
         if cachedPhotos.isEmpty {
-            id = photos[indexPath.item].objectID
+            id = (fetchedResultsController.object(at: indexPath) as! Photo).objectID
         } else {
             id = cachedPhotos[indexPath.item]?.objectID
         }

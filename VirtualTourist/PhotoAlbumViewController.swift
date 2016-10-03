@@ -28,7 +28,19 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     var editMode:Bool = false
     
     @IBAction func excuteAction(_ sender: AnyObject) {
-        print("Photos ::::::: \(photos)")
+        if editMode {
+            print("Remove Selected Images")
+            for photo in selectedPhotos {
+                stack.context.delete(photo)
+            }
+            do{
+                try stack.context.save()
+            } catch let error {
+                print("Error deleting :: \(error)")
+            }
+        } else {
+            print("Get new images from Flickr")
+        }
     
     }
     
@@ -40,14 +52,6 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
             collectionView.reloadData()
         }
     }
-//    required init?(coder aDecoder: NSCoder) {
-//        super.init(coder: aDecoder)
-//    }
-//    
-//    init(fetchedResultsController fc: NSFetchedResultsController<Photo>) {
-//        fetchedResultsController = fc
-//        super.init()
-//    }
     
     
     func executeSearch() {
@@ -109,8 +113,10 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     
     func setEditMode(edit: Bool) {
         if edit {
+            editMode = true
             actionButton.title = "Delete selected Images"
         } else {
+            editMode = false
             actionButton.title = "Get New Images"
         }
     }
@@ -238,7 +244,6 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
             }
         }
         
-        print("SElected Photos:: \(selectedPhotos)")
         cell.image.alpha = 0.25
         cell.backgroundColor = UIColor.cyan
     }
@@ -268,7 +273,10 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
             }
         }
         
-        print("SElected Photos:: \(selectedPhotos)")
+        if selectedPhotos.isEmpty {
+            setEditMode(edit: false)
+        }
+
     }
 
 }

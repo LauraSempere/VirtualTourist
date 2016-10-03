@@ -10,7 +10,7 @@ import UIKit
 import MapKit
 import CoreData
 
-class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
+class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDelegate {
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
@@ -40,7 +40,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
 //        super.init()
 //    }
     
-  
     
     func executeSearch() {
         if let fc = fetchedResultsController {
@@ -56,7 +55,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         super.viewDidLoad()
         collectionView.delegate = self
         collectionView.dataSource = self
-        collectionView.backgroundColor = UIColor.black
 
         // Do any additional setup after loading the view.
     }
@@ -81,47 +79,9 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             
             }
         }
-       // getImagesFromFlickr()
     }
     
-    // MARK: CollectionView
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if photos.isEmpty {
-            return results.count
-        } else {
-            return photos.count
-        }
-    }
-
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
-        cell.backgroundColor = UIColor.orange
-        cell.activityIndicator.startAnimating()
-        cell.image.image = UIImage(named: "placeholder")
-        
-        if photos.isEmpty{
-        
-            if let cachedImg = cachedImages[indexPath.item] {
-                cell.image.image = cachedImg
-            } else {
-                getPhotoAsync(index: indexPath.item) { (image) in
-                    if let img = image {
-                        cell.image.image = img
-                    }
-                    cell.activityIndicator.stopAnimating()
-                    cell.activityIndicator.isHidden = true
-                }
-            }
-            
-        } else {
-            cell.image.image = UIImage(data: photos[indexPath.item].image as! Data)
-            cell.activityIndicator.stopAnimating()
-            cell.activityIndicator.isHidden = true
-        }
-        
-        return cell
-    }
-
+ 
     
     // MARK: Core Data
     func getImagesForCurrentLocation(completionHandler: (_ photos:[Photo]?, _ error: Error?) -> Void) {
@@ -152,7 +112,63 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         }
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        do {
+            try stack.context.save()
+            print("Context saved successfuly !!")
+        } catch let error {
+            print("Error saving context on view will desapear : \(error)")
+            
+        }
+    }
+}
+
+
+// MARK: CollectionView Data Source and Delegate
+extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionViewDelegate {
+    // MARK: CollectionView
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if photos.isEmpty {
+            return results.count
+        } else {
+            return photos.count
+        }
+    }
     
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
+        cell.backgroundColor = UIColor.lightGray
+        cell.activityIndicator.startAnimating()
+        cell.image.image = UIImage(named: "placeholder")
+        
+        if photos.isEmpty{
+            
+            if let cachedImg = cachedImages[indexPath.item] {
+                cell.image.image = cachedImg
+            } else {
+                getPhotoAsync(index: indexPath.item) { (image) in
+                    if let img = image {
+                        cell.image.image = img
+                    }
+                    cell.activityIndicator.stopAnimating()
+                    cell.activityIndicator.isHidden = true
+                }
+            }
+            
+        } else {
+            cell.image.image = UIImage(data: photos[indexPath.item].image as! Data)
+            cell.activityIndicator.stopAnimating()
+            cell.activityIndicator.isHidden = true
+        }
+        
+        return cell
+    }
+
+}
+
+// MARK: Flickr API
+
+extension PhotoAlbumViewController {
     func getPhotoAsync(index: Int, completionHandler: @escaping (_ image:UIImage?) -> Void){
         DispatchQueue.global(qos: .userInteractive).async {
             if let url = URL(string: (self.results[index]["url_m"] as? String)!) {
@@ -174,16 +190,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         }
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        do {
-            try stack.context.save()
-            print("Context saved successfuly !!")
-        } catch let error {
-            print("Error saving context on view will desapear : \(error)")
-        
-        }
-    }
-    
     // MARK: Flickr API
     func getImagesFromFlickr() {
         flickr.getPhotosByLocation(longitude: location.longitude, latitude: location.latitude, completionHandler: { (success: Bool, results: [[String: AnyObject]]?, meta: [String: Int]?,  error:String?) in
@@ -194,7 +200,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                     if let meta = meta {
                         if let savedMeta = self.meta {
                             print("------ Update Meta -------- ")
-                        
+                            
                         } else {
                             self.meta = Meta(pages: Int32(meta["pages"]!), page: Int32(meta["page"]!), pin: self.location, context: self.stack.context)
                             do {
@@ -206,11 +212,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                         }
                         
                     }
-
+                    
                 }
             }
         })
-    
+        
     }
-
 }

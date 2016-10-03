@@ -52,7 +52,7 @@
                         <subviews>
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="T0a-kr-o15">
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="220" id="ZCB-1a-use"/>
+                                    <constraint firstAttribute="height" constant="220" id="z4t-d3-wMC"/>
                                 </constraints>
                             </mapView>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="EyM-Hb-7Z6">
@@ -94,8 +94,8 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="B6X-VP-ZcY" firstAttribute="top" secondItem="EyM-Hb-7Z6" secondAttribute="bottom" id="C2B-01-H3o"/>
-                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="top" secondItem="T0a-kr-o15" secondAttribute="bottom" id="DME-o5-ID0"/>
                             <constraint firstItem="T0a-kr-o15" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="F86-qd-yLD"/>
+                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="top" secondItem="T0a-kr-o15" secondAttribute="bottom" constant="2" id="KhP-pb-Kjp"/>
                             <constraint firstAttribute="trailingMargin" secondItem="EyM-Hb-7Z6" secondAttribute="trailing" constant="-16" id="Qc8-r5-Agp"/>
                             <constraint firstAttribute="trailingMargin" secondItem="T0a-kr-o15" secondAttribute="trailing" constant="-16" id="UTR-Be-x54"/>
                             <constraint firstItem="EyM-Hb-7Z6" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="clg-Kb-4jB"/>

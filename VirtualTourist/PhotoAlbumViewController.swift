@@ -17,7 +17,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     var location:Pin!
     var results:[[String:AnyObject]] = [[String:AnyObject]]()
     var photos:[Photo] = [Photo]()
-
+    var cachedImages = [Int:UIImage]()
     let flickr = FlickrClient.sharedInstance()
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
     
@@ -81,14 +81,18 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         cell.backgroundColor = UIColor.orange
         cell.activityIndicator.startAnimating()
         cell.image.image = UIImage(named: "placeholder")
-        getPhotoAsync(index: indexPath.item) { (image) in
-            if let img = image {
-                cell.image.image = img
-                cell.activityIndicator.stopAnimating()
-                cell.activityIndicator.isHidden = true
-            } else {
-                cell.activityIndicator.stopAnimating()
-                cell.activityIndicator.isHidden = true
+        if let cachedImg = cachedImages[indexPath.item] {
+            cell.image.image = cachedImg
+        } else {
+            getPhotoAsync(index: indexPath.item) { (image) in
+                if let img = image {
+                    cell.image.image = img
+                    cell.activityIndicator.stopAnimating()
+                    cell.activityIndicator.isHidden = true
+                } else {
+                    cell.activityIndicator.stopAnimating()
+                    cell.activityIndicator.isHidden = true
+                }
             }
         }
         
@@ -116,6 +120,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 let photo = Photo(image: imageData!, pin: self.location, context: self.stack.context)
                 self.photos.append(photo)
                 if let image = UIImage(data: imageData as! Data) {
+                    self.cachedImages[index] = image
                     DispatchQueue.main.async {
                         completionHandler(image)
                     }

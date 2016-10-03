@@ -21,12 +21,15 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     var results:[[String:AnyObject]] = [[String:AnyObject]]()
     var photos:[Photo] = [Photo]()
     var meta:Meta!
-    var cachedImages = [Int:UIImage]()
+    var cachedPhotos = [Int: Photo]()
     let flickr = FlickrClient.sharedInstance()
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
+    var selectedPhotos:[Photo] = []
     var editMode:Bool = false
     
     @IBAction func excuteAction(_ sender: AnyObject) {
+        print("Photos ::::::: \(photos)")
+    
     }
     
     
@@ -128,6 +131,21 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         }
     }
     
+    func getPhotoById(id: NSManagedObjectID, completionHandler:(_ photo: Photo?, _ error: Error?) -> Void) {
+        do {
+            let result =  try stack.context.existingObject(with: id)
+            if let photo = result as? Photo {
+                completionHandler(photo, nil)
+            } else {
+                completionHandler(nil, nil)
+            }
+        } catch let err {
+            completionHandler(nil, err)
+            
+        }
+    
+    }
+    
     func getSavedMeta(){
         let fetchReq:NSFetchRequest<Meta> = Meta.fetchRequest()
         let pred = NSPredicate(format: "pin = %@", argumentArray: [location])
@@ -173,8 +191,8 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         
         if photos.isEmpty{
             
-            if let cachedImg = cachedImages[indexPath.item] {
-                cell.image.image = cachedImg
+            if let cachedPhoto = cachedPhotos[indexPath.item] {
+                cell.image.image = UIImage(data: cachedPhoto.image as! Data)
             } else {
                 getPhotoAsync(index: indexPath.item) { (image) in
                     if let img = image {
@@ -199,7 +217,28 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         if !editMode {
             setEditMode(edit: true)
         }
+       
+        var id:NSManagedObjectID!
         
+        if cachedPhotos.isEmpty {
+            id = photos[indexPath.item].objectID
+        } else {
+            id = cachedPhotos[indexPath.item]?.objectID
+        }
+        
+        if let id = id {
+            getPhotoById(id: id) { (photo, error) in
+                if let err = error {
+                    print("Error getting photo: \(err)")
+                } else {
+                    if let photo = photo {
+                        selectedPhotos.append(photo)
+                    }
+                }
+            }
+        }
+        
+        print("SElected Photos:: \(selectedPhotos)")
         cell.image.alpha = 0.25
         cell.backgroundColor = UIColor.cyan
     }
@@ -208,6 +247,28 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
         cell.image.alpha = 1
         cell.backgroundColor = UIColor.clear
+        
+        var id:NSManagedObjectID!
+        
+        if cachedPhotos.isEmpty {
+            id = photos[indexPath.item].objectID
+        } else {
+            id = cachedPhotos[indexPath.item]?.objectID
+        }
+        
+        if let id = id {
+            getPhotoById(id: id) { (photo, error) in
+                if let err = error {
+                    print("Error getting photo: \(err)")
+                } else {
+                    if let photo = photo {
+                        selectedPhotos = selectedPhotos.filter() {$0 != photo}
+                    }
+                }
+            }
+        }
+        
+        print("SElected Photos:: \(selectedPhotos)")
     }
 
 }
@@ -218,11 +279,12 @@ extension PhotoAlbumViewController {
     func getPhotoAsync(index: Int, completionHandler: @escaping (_ image:UIImage?) -> Void){
         DispatchQueue.global(qos: .userInteractive).async {
             if let url = URL(string: (self.results[index]["url_m"] as? String)!) {
+                
                 let imageData = NSData(contentsOf: url)
-                let photo = Photo(image: imageData!, pin: self.location, meta: self.meta, context: self.stack.context)
-                //self.photos.append(photo)
+                let photo =  Photo(image: imageData!, pin: self.location, meta: self.meta, context: self.stack.context)
+                self.cachedPhotos[index] = photo
+               
                 if let image = UIImage(data: imageData as! Data) {
-                    self.cachedImages[index] = image
                     DispatchQueue.main.async {
                         completionHandler(image)
                     }

@@ -28,7 +28,7 @@ class FlickrClient:NSObject {
         return components.url!
     }
     
-    func getPhotosByLocation(longitude: Double, latitude: Double, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ errorString: String?) -> Void){
+    func getPhotosByLocation(longitude: Double, latitude: Double, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ meta: [String: Int]?, _ errorString: String?) -> Void){
         let methodParameters: [String: String?] = [
             Constants.FlickrParameterKeys.BoundingBox: createBBox(longitude: longitude, latitude: latitude),
             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
@@ -41,11 +41,11 @@ class FlickrClient:NSObject {
             Constants.FlickrParameterKeys.Page: "1"]
         
         taskForGETMethod(params: methodParameters as [String : AnyObject]) {
-            (results: [[String: AnyObject]]?, error: String?) in
+            (results: [[String: AnyObject]]?, meta: [String: Int]?, error: String?) in
             if let err = error {
-               completionHandler(false, nil, err)
+               completionHandler(false, nil, nil, err)
             } else {
-                completionHandler(true, results, nil)
+                completionHandler(true, results, meta, nil)
             }
             
         }
@@ -53,17 +53,17 @@ class FlickrClient:NSObject {
         
     }
     
-    func taskForGETMethod(params:[String:AnyObject], completionHandler:@escaping (_ results:[[String: AnyObject]]?, _ error: String?) -> Void) -> URLSessionDataTask {
+    func taskForGETMethod(params:[String:AnyObject], completionHandler:@escaping (_ results:[[String: AnyObject]]?, _ meta: [String: Int]?, _ error: String?) -> Void) -> URLSessionDataTask {
         let url = flickrURLWithParams(params: params)
         let session = URLSession.shared
-        let request = MutableURLRequest(url: url)
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         let task = session.dataTask(with: request as URLRequest) { (data, resp, error) in
             
             func sendError(error: String) {
                 print(error)
                 //let userInfo = [NSLocalizedDescriptionKey : error]
-                completionHandler(nil, error)
+                completionHandler(nil, nil, error)
             }
             
             guard(error == nil) else {
@@ -86,7 +86,7 @@ class FlickrClient:NSObject {
                     sendError(error: (error?.localizedDescription)!)
                     return
                 }
-                print("Result ======= >>>>>>> \(result)")
+               
                 guard let result = result else {
                     sendError(error: "No results were deserialized")
                     return
@@ -99,6 +99,15 @@ class FlickrClient:NSObject {
                     sendError(error: "No photos were received from Flickr")
                     return
                 }
+                guard let pages = photos["pages"] as? Int else {
+                    sendError(error: "No pages found")
+                    return
+                }
+                
+                guard let page = photos["page"] as? Int else {
+                    sendError(error: "No current page returned")
+                    return
+                }
                 
                 guard let photoCollection = photos["photo"] as? [[String: AnyObject]] else {
                     sendError(error: "No Photo Collection received from Flickr")
@@ -106,7 +115,7 @@ class FlickrClient:NSObject {
                 }
                 self.photosCount = photoCollection.count
                 
-                completionHandler(photoCollection, nil)
+                completionHandler(photoCollection, ["pages": pages, "page": page] , nil)
             })
             
         }

@@ -23,6 +23,7 @@
 		DD8C2A001DA0DFA20085F9D5 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C29FF1DA0DFA20085F9D5 /* Constants.swift */; };
 		DD8C2A021DA0DFEC0085F9D5 /* FlickrClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */; };
 		DD8C2A051DA107070085F9D5 /* PhotoAlbumCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */; };
+		DD8C657B1DA1390900B4ADE8 /* GCD.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C657A1DA1390900B4ADE8 /* GCD.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		DD8C29FF1DA0DFA20085F9D5 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
 		DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumCell.swift; sourceTree = "<group>"; };
+		DD8C657A1DA1390900B4ADE8 /* GCD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GCD.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +69,7 @@
 				DD6AFC1E1DA0249000F67B1D /* Pin+CoreDataClass.swift */,
 				DD6AFC1F1DA0249000F67B1D /* Pin+CoreDataProperties.swift */,
 				DD6AFC1A1DA01D0100F67B1D /* CoreDataStack.swift */,
+				DD8C657A1DA1390900B4ADE8 /* GCD.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -217,6 +220,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DD6AFC211DA0249000F67B1D /* Photo+CoreDataProperties.swift in Sources */,
+				DD8C657B1DA1390900B4ADE8 /* GCD.swift in Sources */,
 				DD6AFC231DA0249000F67B1D /* Pin+CoreDataProperties.swift in Sources */,
 				DD8C29FD1DA0C4DE0085F9D5 /* PhotoAlbumViewController.swift in Sources */,
 				DD6AFC201DA0249000F67B1D /* Photo+CoreDataClass.swift in Sources */,

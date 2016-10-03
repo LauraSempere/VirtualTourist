@@ -10,14 +10,46 @@ import UIKit
 import MapKit
 import CoreData
 
-class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
+class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
     var location:Pin!
+    var results:[[String:AnyObject]] = [[String:AnyObject]]()
     var photos:[Photo] = [Photo]()
+
     let flickr = FlickrClient.sharedInstance()
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
+    
+    
+    
+    var fetchedResultsController: NSFetchedResultsController<Photo>? {
+        didSet {
+            fetchedResultsController?.delegate = self
+            executeSearch()
+            collectionView.reloadData()
+        }
+    }
+//    required init?(coder aDecoder: NSCoder) {
+//        super.init(coder: aDecoder)
+//    }
+//    
+//    init(fetchedResultsController fc: NSFetchedResultsController<Photo>) {
+//        fetchedResultsController = fc
+//        super.init()
+//    }
+    
+  
+    
+    func executeSearch() {
+        if let fc = fetchedResultsController {
+            do {
+                try fc.performFetch()
+            } catch let error {
+                print("Error fetching data: \(error)")
+            }
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,24 +67,31 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     override func viewWillAppear(_ animated: Bool) {
         print("View Will Appear --------------- > \(location)")
-        getSavedImages()
+        //getSavedImages()
+        getImagesFromFlickr()
     }
     
     // MARK: CollectionView
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 5
-        //return photos.count
+        return results.count
     }
-    
-//    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
-//        return 1
-//    }
-    
+
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
-        print("------ Cell ------ \(cell)")
-        cell.activityIndicator.startAnimating()
         cell.backgroundColor = UIColor.orange
+        cell.activityIndicator.startAnimating()
+        cell.image.image = UIImage(named: "placeholder")
+        getPhotoAsync(index: indexPath.item) { (image) in
+            if let img = image {
+                cell.image.image = img
+                cell.activityIndicator.stopAnimating()
+                cell.activityIndicator.isHidden = true
+            } else {
+                cell.activityIndicator.stopAnimating()
+                cell.activityIndicator.isHidden = true
+            }
+        }
+        
         return cell
     }
 
@@ -70,35 +109,37 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         }
     }
     
+    func getPhotoAsync(index: Int, completionHandler: @escaping (_ image:UIImage?) -> Void){
+        DispatchQueue.global(qos: .userInteractive).async {
+            if let url = URL(string: (self.results[index]["url_m"] as? String)!) {
+                let imageData = NSData(contentsOf: url)
+                let photo = Photo(image: imageData!, pin: self.location, context: self.stack.context)
+                self.photos.append(photo)
+                if let image = UIImage(data: imageData as! Data) {
+                    DispatchQueue.main.async {
+                        completionHandler(image)
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completionHandler(nil)
+                    }
+                }
+            }
+            
+        }
+    }
+    
     // MARK: Flickr API
     func getImagesFromFlickr() {
         flickr.getPhotosByLocation(longitude: location.longitude, latitude: location.latitude, completionHandler: { (success: Bool, results: [[String: AnyObject]]?, error:String?) in
             if success {
-                print("Success!!")
-                for result in results! {
-                    do {
-                        let url = URL(string: result["url_m"] as! String)
-                        let imageFromURL = try NSData(contentsOf: url!)
-                        Photo(image: imageFromURL!, pin: self.location, context: self.stack.context)
-                        
-                    } catch let err {
-                        print("Error creating image Data from url: \(err)")
-                    }
+                self.results = results!
+                DispatchQueue.main.async {
+                    self.collectionView.reloadData()
                 }
-                
             }
         })
     
     }
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
 
 }

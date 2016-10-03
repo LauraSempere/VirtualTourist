@@ -10,6 +10,8 @@ import Foundation
 
 class FlickrClient:NSObject {
     
+    var photosCount:Int = 0
+    
     func flickrURLWithParams(params: [String: AnyObject]) -> URL {
         let components = NSURLComponents()
         components.scheme = Constants.Flickr.APIScheme
@@ -84,6 +86,7 @@ class FlickrClient:NSObject {
                     sendError(error: (error?.localizedDescription)!)
                     return
                 }
+                print("Result ======= >>>>>>> \(result)")
                 guard let result = result else {
                     sendError(error: "No results were deserialized")
                     return
@@ -101,6 +104,7 @@ class FlickrClient:NSObject {
                     sendError(error: "No Photo Collection received from Flickr")
                     return
                 }
+                self.photosCount = photoCollection.count
                 
                 completionHandler(photoCollection, nil)
             })

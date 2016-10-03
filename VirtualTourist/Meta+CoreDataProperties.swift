@@ -1,5 +1,5 @@
 //
-//  Pin+CoreDataProperties.swift
+//  Meta+CoreDataProperties.swift
 //  VirtualTourist
 //
 //  Created by Laura Scully on 3/10/2016.
@@ -9,21 +9,21 @@
 import Foundation
 import CoreData 
 
-extension Pin {
+extension Meta {
 
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<Pin> {
-        return NSFetchRequest<Pin>(entityName: "Pin");
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<Meta> {
+        return NSFetchRequest<Meta>(entityName: "Meta");
     }
 
-    @NSManaged public var latitude: Double
-    @NSManaged public var longitude: Double
+    @NSManaged public var pages: Int32
+    @NSManaged public var page: Int32
+    @NSManaged public var pin: Pin?
     @NSManaged public var photos: NSSet?
-    @NSManaged public var meta: Meta?
 
 }
 
 // MARK: Generated accessors for photos
-extension Pin {
+extension Meta {
 
     @objc(addPhotosObject:)
     @NSManaged public func addToPhotos(_ value: Photo)

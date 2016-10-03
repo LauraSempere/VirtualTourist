@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="11232" systemVersion="16A323" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="Meta" representedClassName=".Meta" syncable="YES">
+        <attribute name="page" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="pages" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="meta" inverseEntity="Photo" syncable="YES"/>
+        <relationship name="pin" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="meta" inverseEntity="Pin" syncable="YES"/>
+    </entity>
     <entity name="Photo" representedClassName=".Photo" syncable="YES">
         <attribute name="image" attributeType="Binary" allowsExternalBinaryDataStorage="YES" indexed="YES" syncable="YES"/>
+        <relationship name="meta" maxCount="1" deletionRule="Nullify" destinationEntity="Meta" inverseName="photos" inverseEntity="Meta" syncable="YES"/>
         <relationship name="pin" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photos" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Pin" representedClassName=".Pin" syncable="YES">
         <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" indexed="YES" syncable="YES"/>
         <attribute name="longitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" indexed="YES" syncable="YES"/>
+        <relationship name="meta" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Meta" inverseName="pin" inverseEntity="Meta" syncable="YES"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Photo" positionX="-54" positionY="-9" width="128" height="75"/>
-        <element name="Pin" positionX="-63" positionY="-18" width="128" height="90"/>
+        <element name="Photo" positionX="-54" positionY="-9" width="128" height="90"/>
+        <element name="Pin" positionX="-63" positionY="-18" width="128" height="105"/>
+        <element name="Meta" positionX="-54" positionY="9" width="128" height="105"/>
     </elements>
 </model>

@@ -2,12 +2,12 @@
 //  Photo+CoreDataProperties.swift
 //  VirtualTourist
 //
-//  Created by Laura Scully on 2/10/2016.
+//  Created by Laura Scully on 3/10/2016.
 //  Copyright © 2016 laura.sempere.com. All rights reserved.
 //
 
 import Foundation
-import CoreData
+import CoreData 
 
 extension Photo {
 
@@ -17,5 +17,6 @@ extension Photo {
 
     @NSManaged public var image: NSData?
     @NSManaged public var pin: Pin?
+    @NSManaged public var meta: Meta?
 
 }

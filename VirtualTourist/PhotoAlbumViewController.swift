@@ -117,8 +117,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         DispatchQueue.global(qos: .userInteractive).async {
             if let url = URL(string: (self.results[index]["url_m"] as? String)!) {
                 let imageData = NSData(contentsOf: url)
-                let photo = Photo(image: imageData!, pin: self.location, context: self.stack.context)
-                self.photos.append(photo)
+               // let photo = Photo(image: imageData!, pin: self.location, context: self.stack.context)
+               // self.photos.append(photo)
                 if let image = UIImage(data: imageData as! Data) {
                     self.cachedImages[index] = image
                     DispatchQueue.main.async {

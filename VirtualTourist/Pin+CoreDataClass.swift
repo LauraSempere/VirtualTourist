@@ -2,7 +2,7 @@
 //  Pin+CoreDataClass.swift
 //  VirtualTourist
 //
-//  Created by Laura Scully on 2/10/2016.
+//  Created by Laura Scully on 3/10/2016.
 //  Copyright © 2016 laura.sempere.com. All rights reserved.
 //
 
@@ -21,4 +21,5 @@ public class Pin: NSManagedObject {
             fatalError("No entity Pin found")
         }
     }
+
 }

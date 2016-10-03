@@ -14,7 +14,7 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
-    @IBOutlet weak var getNewImagesButton: UIBarButtonItem!
+    @IBOutlet weak var actionButton: UIBarButtonItem!
     @IBOutlet weak var activityIndicator:UIActivityIndicatorView!
     
     var location:Pin!
@@ -24,8 +24,9 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     var cachedImages = [Int:UIImage]()
     let flickr = FlickrClient.sharedInstance()
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
+    var editMode:Bool = false
     
-    @IBAction func getNewImages(_ sender: AnyObject) {
+    @IBAction func excuteAction(_ sender: AnyObject) {
     }
     
     
@@ -60,6 +61,7 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         super.viewDidLoad()
         collectionView.delegate = self
         collectionView.dataSource = self
+        collectionView.allowsMultipleSelection = true
 
         // Do any additional setup after loading the view.
     }
@@ -73,7 +75,7 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         getSavedMeta()
         getImagesForCurrentLocation { (photos, error) in
             if let err = error {
-                print("DB error: \(error)")
+                print("DB error: \(err)")
             } else {
                 if (photos?.isEmpty)! {
                     print("Getting photos from Flickr .... ")
@@ -93,12 +95,20 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
             collectionView.isHidden = true
             activityIndicator.startAnimating()
             activityIndicator.isHidden = false
-            getNewImagesButton.isEnabled = false
+            actionButton.isEnabled = false
         } else {
             collectionView.isHidden = false
             activityIndicator.stopAnimating()
             activityIndicator.isHidden = true
-            getNewImagesButton.isEnabled = true
+            actionButton.isEnabled = true
+        }
+    }
+    
+    func setEditMode(edit: Bool) {
+        if edit {
+            actionButton.title = "Delete selected Images"
+        } else {
+            actionButton.title = "Get New Images"
         }
     }
  
@@ -182,6 +192,22 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         }
         
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
+        if !editMode {
+            setEditMode(edit: true)
+        }
+        
+        cell.image.alpha = 0.25
+        cell.backgroundColor = UIColor.cyan
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
+        cell.image.alpha = 1
+        cell.backgroundColor = UIColor.clear
     }
 
 }

@@ -14,6 +14,9 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var getNewImagesButton: UIBarButtonItem!
+    @IBOutlet weak var activityIndicator:UIActivityIndicatorView!
+    
     var location:Pin!
     var results:[[String:AnyObject]] = [[String:AnyObject]]()
     var photos:[Photo] = [Photo]()
@@ -22,6 +25,8 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     let flickr = FlickrClient.sharedInstance()
     let stack = (UIApplication.shared.delegate as! AppDelegate).stack
     
+    @IBAction func getNewImages(_ sender: AnyObject) {
+    }
     
     
     var fetchedResultsController: NSFetchedResultsController<Photo>? {
@@ -72,8 +77,10 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
             } else {
                 if (photos?.isEmpty)! {
                     print("Getting photos from Flickr .... ")
+                    self.toggleLoadingState(loading: true)
                     getImagesFromFlickr()
                 } else {
+                    self.toggleLoadingState(loading: false)
                     print("Photos form DB")
                 }
             
@@ -81,6 +88,19 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         }
     }
     
+    func toggleLoadingState(loading:Bool) {
+        if loading {
+            collectionView.isHidden = true
+            activityIndicator.startAnimating()
+            activityIndicator.isHidden = false
+            getNewImagesButton.isEnabled = false
+        } else {
+            collectionView.isHidden = false
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+            getNewImagesButton.isEnabled = true
+        }
+    }
  
     
     // MARK: Core Data
@@ -196,6 +216,7 @@ extension PhotoAlbumViewController {
             if success {
                 self.results = results!
                 DispatchQueue.main.async {
+                    self.toggleLoadingState(loading: false)
                     self.collectionView.reloadData()
                     if let meta = meta {
                         if let savedMeta = self.meta {
@@ -212,7 +233,7 @@ extension PhotoAlbumViewController {
                         }
                         
                     }
-                    
+
                 }
             }
         })

@@ -7,9 +7,9 @@
         <relationship name="pin" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="meta" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Photo" representedClassName=".Photo" syncable="YES">
-        <attribute name="image" attributeType="Binary" allowsExternalBinaryDataStorage="YES" indexed="YES" syncable="YES"/>
-        <relationship name="meta" maxCount="1" deletionRule="Nullify" destinationEntity="Meta" inverseName="photos" inverseEntity="Meta" syncable="YES"/>
-        <relationship name="pin" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photos" inverseEntity="Pin" syncable="YES"/>
+        <attribute name="image" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES" indexed="YES" syncable="YES"/>
+        <relationship name="meta" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Meta" inverseName="photos" inverseEntity="Meta" syncable="YES"/>
+        <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photos" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Pin" representedClassName=".Pin" syncable="YES">
         <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" indexed="YES" syncable="YES"/>
@@ -18,8 +18,8 @@
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
     </entity>
     <elements>
+        <element name="Meta" positionX="-54" positionY="9" width="128" height="105"/>
         <element name="Photo" positionX="-54" positionY="-9" width="128" height="90"/>
         <element name="Pin" positionX="-63" positionY="-18" width="128" height="105"/>
-        <element name="Meta" positionX="-54" positionY="9" width="128" height="105"/>
     </elements>
 </model>

@@ -12,13 +12,18 @@ import CoreData
 
 public class Photo: NSManagedObject {
     
-    convenience init(image:NSData, pin: Pin, meta:Meta, context: NSManagedObjectContext) {
+    
+    convenience init(image: NSData?, pin: Pin, meta:Meta, context: NSManagedObjectContext) {
         
         if let entity = NSEntityDescription.entity(forEntityName: "Photo", in: context) {
             self.init(entity: entity, insertInto: context)
-            self.image = image
             self.pin = pin
             self.meta = meta
+            
+            if let img = image {
+                self.image = img
+            }
+            
         } else {
             fatalError("Unable to find Entity Photo!")
         }

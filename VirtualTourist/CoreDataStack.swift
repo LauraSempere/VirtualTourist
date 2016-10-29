@@ -5,7 +5,7 @@ struct CoreDataStack {
     
     // MARK:  - Properties
     private let model : NSManagedObjectModel
-    private let coordinator : NSPersistentStoreCoordinator
+    let coordinator : NSPersistentStoreCoordinator
     private let modelURL : NSURL
     private let dbURL : NSURL
     let context : NSManagedObjectContext
@@ -80,6 +80,10 @@ extension CoreDataStack {
         if context.hasChanges {
             try context.save()
         }
+    }
+    
+    func updateImage(photo: NSManagedObject, image: NSData) {
+        photo.setValue(image, forKey: "image")
     }
 }
 

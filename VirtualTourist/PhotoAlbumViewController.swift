@@ -26,6 +26,10 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     var selectedPhotos:[Photo] = []
     var editMode:Bool = false
     
+    var insertedIndexPaths: [IndexPath]!
+    var deletedIndexPaths : [IndexPath]!
+    var updatedIndexPaths : [IndexPath]!
+    
     @IBAction func excuteAction(_ sender: AnyObject) {
         if editMode {
             print("Remove Selected Images")
@@ -46,10 +50,12 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     
     lazy var fetchedResultsController: NSFetchedResultsController<Photo> = {
         let fetchReq:NSFetchRequest<Photo> = Photo.fetchRequest()
+        fetchReq.returnsObjectsAsFaults = false
         fetchReq.sortDescriptors = [NSSortDescriptor(key: "image", ascending: true)]
         let pred = NSPredicate(format: "pin = %@", argumentArray: [self.location])
         fetchReq.predicate = pred
         let fc = NSFetchedResultsController(fetchRequest: fetchReq, managedObjectContext: self.stack.context, sectionNameKeyPath: nil, cacheName: nil)
+        fc.delegate = self
         return fc
     }()
     
@@ -83,10 +89,26 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
                 if (photos?.isEmpty)! {
                     print("Getting photos from Flickr .... ")
                     self.toggleLoadingState(loading: true)
-                    getImagesFromFlickr()
+                    
+                    getImagesFromFlickr(completion: { (success) in
+                        if success {
+                            print("Success....")
+                            let photosSaved = self.fetchedResultsController.fetchedObjects
+                            for (index, photo) in photosSaved!.enumerated() {
+                                let photoID = photo.objectID
+                                self.getPhotoAsync(photoID: photoID, index: index)
+                            }
+                           // print(((photosSaved?[0] as? NSManagedObject)?.objectID)?.isTemporaryID)
+                            
+                            
+                            
+                        } else {
+                            print("No success....")
+                        }
+                    })
                 } else {
                     self.toggleLoadingState(loading: false)
-                    print("Photos form DB")
+                    print("Photos from DB")
                 }
             
             }
@@ -159,15 +181,59 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         }
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        do {
-            try stack.context.save()
-            print("Context saved successfuly !!")
-        } catch let error {
-            print("Error saving context on view will desapear : \(error)")
-            
-        }
-    }
+    
+
+    
+//    var blockOperations:[BlockOperation]!
+//    
+//    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+//        blockOperations = [BlockOperation]()
+//    }
+//    
+//    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+//        switch type {
+//        case .insert: // Insert
+//            print("Inserting....")
+//            guard let newIndexPath = newIndexPath else { return }
+//            let op = BlockOperation { [weak self] in self?.collectionView?.insertItems(at: [newIndexPath]) }
+//            blockOperations.append(op)
+//            
+//        case .update: // Update
+//            NSLog("2. Update")
+//            guard let newIndexPath = newIndexPath else { return }
+//            let op = BlockOperation { [weak self] in self?.collectionView?.reloadItems(at: [newIndexPath]) }
+//            blockOperations.append(op)
+//            
+//        case .move: // Move
+//            guard let indexPath = indexPath else { return }
+//            guard let newIndexPath = newIndexPath else { return }
+//            let op = BlockOperation { [weak self] in self?.collectionView?.moveItem(at: indexPath, to: newIndexPath)}
+//            blockOperations.append(op)
+//            
+//        case .delete: // Delete
+//            guard let newIndexPath = newIndexPath else { return }
+//            let op = BlockOperation { [weak self] in self?.collectionView?.deleteItems(at: [newIndexPath]) }
+//            blockOperations.append(op)
+//        default: break
+//        }
+//    }
+//    
+//    
+//    
+//    
+//    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+//        
+//        print("Perform updates!")
+//        collectionView.performBatchUpdates({
+//            for operation in self.blockOperations {
+//                operation.start()
+//            }
+//        }) { (finished) in
+//            self.blockOperations.removeAll(keepingCapacity: false)
+//        }
+//    }
+
+    
 }
 
 
@@ -176,11 +242,16 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
     // MARK: CollectionView
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         
-        if let count = fetchedResultsController.sections?[0].numberOfObjects, count > 0 {
-            return count
-        } else {
-            return results.count
-        }
+//        if let count = fetchedResultsController.sections?[0].numberOfObjects, count > 0  {
+//            return count
+//        } else {
+//            print("Results count ---- \(results.count)")
+//            return 0
+//            //return results.count
+//        }
+        
+        return (fetchedResultsController.sections?[0].numberOfObjects)!
+        
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -189,25 +260,29 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         cell.activityIndicator.startAnimating()
         cell.image.image = UIImage(named: "placeholder")
         
-        if let savedPhotosCount = fetchedResultsController.sections?[0].numberOfObjects, savedPhotosCount > 0 {
-            let savedPhoto = fetchedResultsController.object(at: indexPath) as! Photo
-            cell.image.image = UIImage(data: savedPhoto.image as! Data)
-            cell.activityIndicator.stopAnimating()
-            cell.activityIndicator.isHidden = true
-            
-        } else {
-            if let cachedPhoto = cachedPhotos[indexPath.item] {
-                cell.image.image = UIImage(data: cachedPhoto.image as! Data)
+        if let savedPhoto = fetchedResultsController.object(at: indexPath) as? Photo{
+            print("Saved Photo")
+            if let savedImage = savedPhoto.image {
+                print("Saved Image")
+                cell.image.image = UIImage(data: savedImage as! Data)
             } else {
-                getPhotoAsync(index: indexPath.item) { (image) in
-                    if let img = image {
-                        cell.image.image = img
-                    }
-                    cell.activityIndicator.stopAnimating()
-                    cell.activityIndicator.isHidden = true
-                }
+                print("Not saved Image")
             }
+        } else {
+            print("Not Saved Photo")
         }
+        
+        
+//        if let savedImage = (fetchedResultsController.object(at: indexPath) as? Photo)!.image {
+//            cell.image.image = UIImage(data: savedImage as! Data)
+//            cell.activityIndicator.stopAnimating()
+//            cell.activityIndicator.isHidden = true
+//            //cell.backgroundColor = UIColor.orange
+//        } else {
+//            cell.backgroundColor = UIColor.darkGray
+//         //   getPhotoAsync(photoID: fetchedResultsController.object(at: indexPath).objectID, index: indexPath.item)
+//        }
+        
         
         return cell
     }
@@ -272,61 +347,141 @@ extension PhotoAlbumViewController: UICollectionViewDataSource, UICollectionView
         }
 
     }
-
 }
 
 // MARK: Flickr API
 
 extension PhotoAlbumViewController {
-    func getPhotoAsync(index: Int, completionHandler: @escaping (_ image:UIImage?) -> Void){
-        DispatchQueue.global(qos: .userInteractive).async {
-            if let url = URL(string: (self.results[index]["url_m"] as? String)!) {
-                
-                let imageData = NSData(contentsOf: url)
-                let photo =  Photo(image: imageData!, pin: self.location, meta: self.meta, context: self.stack.context)
-                self.cachedPhotos[index] = photo
-               
-                if let image = UIImage(data: imageData as! Data) {
-                    DispatchQueue.main.async {
-                        completionHandler(image)
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        completionHandler(nil)
-                    }
+    
+    
+    func getPhotoAsync(photoID: NSManagedObjectID, index: Int){
+       print("Is Temporary ??? \(photoID.isTemporaryID)")
+        
+        var bgContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        bgContext.parent = self.stack.context
+        //bgContext.persistentStoreCoordinator = self.stack.coordinator
+        
+        bgContext.perform {
+           
+                guard let url = URL(string: (self.results[index]["url_m"] as? String)!) else {
+                    print("No url")
+                    return
                 }
+                guard let imageData = NSData(contentsOf: url) else {
+                    print("No image data")
+                    return
+                }
+            
+            do {
+                let photo = try bgContext.existingObject(with: photoID)
+                photo.setValue(imageData, forKey: "image")
+                
+                do {
+                    try bgContext.save()
+                } catch let err {
+                    print("Error saving BG context: \(err)")
+                }
+                
+            } catch let error {
+                print("Error---->>>> \(error)")
             }
             
+            performUIUpdatesOnMain(updates: { 
+                self.collectionView.reloadData()
+            })
+
+            
+//            self.stack.context.perform {
+//                photo.setValue(imageData, forKey: "image")
+//                do {
+//                    try self.stack.context.save()
+//                } catch let error{
+//                    print("Error saving main context: \(error)")
+//                }
+//            }
+            
+            
+        
         }
     }
     
+        
+        
+ //       let queu = DispatchQueue(label: "getImages")
+//        queu.async {
+//            for (index, result) in self.results.enumerated() {
+//                guard let url = URL(string: (result["url_m"] as? String)!) else {
+//                    print("No url")
+//                    return
+//                }
+//                guard let imageData = NSData(contentsOf: url) else {
+//                    print("No image data")
+//                    return
+//                }
+//                let indexPath = IndexPath(item: index, section: 0)
+//                
+//                guard let photo = self.fetchedResultsController.object(at: indexPath) as? NSManagedObject else {
+//                    print("No photo")
+//                    return
+//                }
+//                
+//                photo.setValue(imageData, forKey: "image")
+//                print("Saving Photo")
+//            
+//                performUIUpdatesOnMain {
+//                    self.actionButton.isEnabled = false
+//                }
+//
+//        }
+//    }
+        
+    
+    
+    
+    
     // MARK: Flickr API
-    func getImagesFromFlickr() {
+    func getImagesFromFlickr(completion: @escaping (_ success: Bool) -> Void) {
         flickr.getPhotosByLocation(longitude: location.longitude, latitude: location.latitude, completionHandler: { (success: Bool, results: [[String: AnyObject]]?, meta: [String: Int]?,  error:String?) in
             if success {
                 self.results = results!
+                
+                if let meta = meta {
+                    if let savedMeta = self.meta {
+                        print("------ Update Meta -------- ")
+                        
+                    } else {
+                        print("Create new meta")
+                        self.meta = Meta(pages: Int32(meta["pages"]!), page: Int32(meta["page"]!), pin: self.location, context: self.stack.context)
+                        
+                        for result in results! {
+                            let newPhoto = Photo(image: nil, pin: self.location, meta: self.meta, context: self.stack.context)
+                        
+                        }
+                        
+                        do {
+                            try self.stack.saveContext()
+                            print("Results saved!!!")
+                            try self.fetchedResultsController.performFetch()
+                            print(self.fetchedResultsController.fetchedObjects?.count)
+                        } catch let err {
+                            print("Err----- \(err)")
+                        }
+                        
+                         completion(true)
+                    
+                    }
+                }
+                
                 DispatchQueue.main.async {
                     self.toggleLoadingState(loading: false)
                     self.collectionView.reloadData()
-                    if let meta = meta {
-                        if let savedMeta = self.meta {
-                            print("------ Update Meta -------- ")
-                            
-                        } else {
-                            self.meta = Meta(pages: Int32(meta["pages"]!), page: Int32(meta["page"]!), pin: self.location, context: self.stack.context)
-                            do {
-                                try self.stack.saveContext()
-                                print("Meta saved successfully!!!")
-                            } catch let err {
-                                print("Error saving stack")
-                            }
-                        }
-                        
-                    }
 
                 }
+            } else {
+                completion(false)
             }
         })
         
     }
 }
+

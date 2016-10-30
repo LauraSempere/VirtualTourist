@@ -49,8 +49,55 @@ class FlickrClient:NSObject {
             }
             
         }
-    
         
+    }
+    
+    func getPhotosForLocation(location:Pin, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ meta: [String: Int]?, _ errorString: String?) -> Void){
+        var methodParameters: [String: String?] = [
+            Constants.FlickrParameterKeys.BoundingBox: createBBox(longitude: location.longitude, latitude: location.latitude),
+            Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
+            Constants.FlickrParameterKeys.SafeSearch: Constants.FlickrParameterValues.UseSafeSearch,
+            Constants.FlickrParameterKeys.Extras: Constants.FlickrParameterValues.MediumURL,
+            Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,
+            Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
+            Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
+            Constants.FlickrParameterKeys.PerPage: "5",
+            Constants.FlickrParameterKeys.Page: "1"]
+
+        if let meta = location.meta {
+            print("Fotos for new meta...")
+            var currentPage = Int(meta.page)
+            var pages = Int(min(meta.pages, 4000))
+            var newPage = Int(random: Range(uncheckedBounds: (lower: 1, upper: pages)))
+            repeat {
+                newPage = Int(random: Range(uncheckedBounds: (lower: 1, upper: pages)))
+            } while currentPage == newPage
+            
+            methodParameters[Constants.FlickrParameterKeys.Page] = String(newPage)
+            
+            
+            taskForGETMethod(params: methodParameters as [String : AnyObject]) {
+                (results: [[String: AnyObject]]?, meta: [String: Int]?, error: String?) in
+                if let err = error {
+                    completionHandler(false, nil, nil, err)
+                } else {
+                    completionHandler(true, results, meta, nil)
+                }
+                
+            }
+            
+        } else {
+            print("Fotos for updating meta...")
+            taskForGETMethod(params: methodParameters as [String : AnyObject]) {
+                (results: [[String: AnyObject]]?, meta: [String: Int]?, error: String?) in
+                if let err = error {
+                    completionHandler(false, nil, nil, err)
+                } else {
+                   completionHandler(true, results, meta, nil)
+                }
+                
+            }
+        }
     }
     
     func taskForGETMethod(params:[String:AnyObject], completionHandler:@escaping (_ results:[[String: AnyObject]]?, _ meta: [String: Int]?, _ error: String?) -> Void) -> URLSessionDataTask {

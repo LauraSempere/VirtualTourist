@@ -26,6 +26,7 @@
 		DD8C2A021DA0DFEC0085F9D5 /* FlickrClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */; };
 		DD8C2A051DA107070085F9D5 /* PhotoAlbumCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */; };
 		DD8C657B1DA1390900B4ADE8 /* GCD.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8C657A1DA1390900B4ADE8 /* GCD.swift */; };
+		DDF20FBF1DC6430400A4A95B /* Int+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF20FBE1DC6430400A4A95B /* Int+Extension.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 		DD8C2A011DA0DFEC0085F9D5 /* FlickrClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrClient.swift; sourceTree = "<group>"; };
 		DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumCell.swift; sourceTree = "<group>"; };
 		DD8C657A1DA1390900B4ADE8 /* GCD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GCD.swift; sourceTree = "<group>"; };
+		DDF20FBE1DC6430400A4A95B /* Int+Extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Int+Extension.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +111,7 @@
 		DD7728621D9FDBC5009C8D4C /* VirtualTourist */ = {
 			isa = PBXGroup;
 			children = (
+				DDF20FBD1DC642EE00A4A95B /* Helpers */,
 				DD6AFC181DA01C8200F67B1D /* Models */,
 				DD8C2A031DA106C40085F9D5 /* View */,
 				DD6AFC191DA01C8E00F67B1D /* Controllers */,
@@ -145,6 +148,14 @@
 				DD8C2A041DA107070085F9D5 /* PhotoAlbumCell.swift */,
 			);
 			name = View;
+			sourceTree = "<group>";
+		};
+		DDF20FBD1DC642EE00A4A95B /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				DDF20FBE1DC6430400A4A95B /* Int+Extension.swift */,
+			);
+			name = Helpers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -226,6 +237,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DD03A8931DC5F5F800E3DB7B /* Photo+CoreDataClass.swift in Sources */,
+				DDF20FBF1DC6430400A4A95B /* Int+Extension.swift in Sources */,
 				DD03A8961DC5F5F800E3DB7B /* Meta+CoreDataProperties.swift in Sources */,
 				DD8C657B1DA1390900B4ADE8 /* GCD.swift in Sources */,
 				DD8C29FD1DA0C4DE0085F9D5 /* PhotoAlbumViewController.swift in Sources */,

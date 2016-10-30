@@ -11,15 +11,13 @@ import MapKit
 import CoreData
 
 class MapViewController: UIViewController, MKMapViewDelegate {
-   
+    
     @IBOutlet weak var mapView: MKMapView!
     var longTapGesture:UILongPressGestureRecognizer!
     var editModde:Bool = false
-    let stack = (UIApplication.shared.delegate as! AppDelegate).stack
+    var context:NSManagedObjectContext!
     var savedPins = [Pin]()
-
- //   var fetchedResultsController:NSFetchedResultsController = NSFetchedResultsController<Pin>
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         getAndDisplayPins()
@@ -30,7 +28,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         longTapGesture.minimumPressDuration = 0.5
         mapView.addGestureRecognizer(longTapGesture)
         mapView.delegate = self
- 
+        
     }
     
     func startEditing() {
@@ -39,14 +37,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     }
     
     func finishEditing() {
-       editModde = false
+        editModde = false
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Edit", style: UIBarButtonItemStyle.done, target: self, action: #selector(MapViewController.startEditing))
     }
     
     func dropPin(gestureRecognizer: UILongPressGestureRecognizer) {
         
         let tapPoint: CGPoint = gestureRecognizer.location(in: mapView)
-       // let roundedPoint:CGPoint = CGPoint(tapPoint.x y: <#T##Double#>)
         let touchMapCoordinate: CLLocationCoordinate2D = mapView.convert(tapPoint, toCoordinateFrom: mapView)
         
         if UIGestureRecognizerState.began == gestureRecognizer.state {
@@ -54,14 +51,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             annotation.coordinate = touchMapCoordinate
             mapView.addAnnotation(annotation)
             
-            let pin = Pin(longitude: touchMapCoordinate.longitude, latitude: touchMapCoordinate.latitude, context: stack.context)
+            let newPin = Pin(context: context)
+            newPin.longitude = touchMapCoordinate.longitude
+            newPin.latitude = touchMapCoordinate.latitude
             do {
-                try stack.saveContext()
+                try context.save()
                 print("Saving Pin to DB...")
             } catch {
                 print("Error saving context to DB")
             }
-
+            
         }
     }
     
@@ -77,8 +76,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     func getAndDisplayPins() {
         let fetchReq:NSFetchRequest<Pin> = Pin.fetchRequest()
+        
         do {
-          let results = try stack.context.fetch(fetchReq)
+            let results = try context.fetch(fetchReq)
             savedPins = results
             displayPins()
         } catch let error as NSError {
@@ -92,8 +92,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         let latPredicate = NSPredicate(format: "latitude = %@", argumentArray: [Double((view.annotation?.coordinate.latitude)!)])
         request.predicate = NSCompoundPredicate(type: .and, subpredicates: [longPredicate, latPredicate])
         var selectedPin:Pin!
+        
         do {
-            let results = try stack.context.fetch(request)
+            let results = try context.fetch(request)
             selectedPin = results[0]
             
         } catch let error {
@@ -101,24 +102,22 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         }
         
         if editModde {
-            stack.context.delete(selectedPin)
+            context.delete(selectedPin)
             do {
-                try stack.saveContext()
+                try context.save()
                 mapView.removeAnnotation(view.annotation!)
             } catch let error {
                 print("Error saving Context -> \(error)")
             }
             
         } else {
+            print("Navigate to detail view...")
             let photoAlbumVC = self.storyboard?.instantiateViewController(withIdentifier: "PhotoAlbumVC") as? PhotoAlbumViewController
             photoAlbumVC?.location = selectedPin
+            photoAlbumVC?.context = context
             self.navigationController?.pushViewController(photoAlbumVC!, animated: true)
+            
         }
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
 }

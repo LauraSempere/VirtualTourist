@@ -2,12 +2,12 @@
 //  Meta+CoreDataProperties.swift
 //  VirtualTourist
 //
-//  Created by Laura Scully on 3/10/2016.
+//  Created by Laura Scully on 30/10/2016.
 //  Copyright © 2016 laura.sempere.com. All rights reserved.
 //
 
 import Foundation
-import CoreData 
+import CoreData
 
 extension Meta {
 
@@ -15,10 +15,10 @@ extension Meta {
         return NSFetchRequest<Meta>(entityName: "Meta");
     }
 
-    @NSManaged public var pages: Int32
     @NSManaged public var page: Int32
-    @NSManaged public var pin: Pin?
+    @NSManaged public var pages: Int32
     @NSManaged public var photos: NSSet?
+    @NSManaged public var pin: Pin?
 
 }
 

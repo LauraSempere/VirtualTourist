@@ -2,12 +2,12 @@
 //  Pin+CoreDataProperties.swift
 //  VirtualTourist
 //
-//  Created by Laura Scully on 3/10/2016.
+//  Created by Laura Scully on 30/10/2016.
 //  Copyright © 2016 laura.sempere.com. All rights reserved.
 //
 
 import Foundation
-import CoreData 
+import CoreData
 
 extension Pin {
 
@@ -17,8 +17,8 @@ extension Pin {
 
     @NSManaged public var latitude: Double
     @NSManaged public var longitude: Double
-    @NSManaged public var photos: NSSet?
     @NSManaged public var meta: Meta?
+    @NSManaged public var photos: NSSet?
 
 }
 

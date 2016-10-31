@@ -25,7 +25,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     let flickr = FlickrClient.sharedInstance()
     var photoResults: [[String:AnyObject]] = []
     
-    var selectedPhotos:[Photo] = []
+    var selectedPhotos:[IndexPath: Photo] = [:]
     var editMode:Bool = false
     
     //    var insertedIndexPaths: [IndexPath]!
@@ -37,7 +37,19 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     @IBAction func excuteAction(_ sender: AnyObject) {
         if editMode {
-            print("Remove Selected Images")
+            for (k, selected) in selectedPhotos {
+                self.context.delete(selected)
+                //self.collectionView.deleteItems(at: [k])
+            }
+            
+            selectedPhotos = [:]
+//            do {
+//                try context.save()
+//                print("Remove Selected Images")
+//            } catch let error {
+//                print("Error removing photos: \(error)")
+//            }
+            //collectionView.reloadData()
             
         } else {
             removeMeta()
@@ -51,6 +63,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         //getPhotosForCurrentLocation()
         collectionView.dataSource = self
         collectionView.delegate = self
+        collectionView.allowsMultipleSelection = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -96,6 +109,16 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             activityIndicator.stopAnimating()
             activityIndicator.isHidden = true
             collectionView.isHidden = false
+        }
+    }
+    
+    func toggleEditMode(edit: Bool){
+        if edit {
+            editMode = true
+            actionButton.title = "Delete Selected Photos"
+        } else {
+            editMode = false
+            actionButton.title = "Get More Images"
         }
     }
     
@@ -253,44 +276,69 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         return cell
     }
     
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if !editMode {
+            toggleEditMode(edit: true)
+        }
+        
+        let selectedPhoto = fetchedResultController.object(at: indexPath)
+        selectedPhotos[indexPath] = selectedPhoto
+        let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
+        cell.backgroundColor = UIColor.cyan
+        cell.alpha = 0.4
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        let selectedPhoto = fetchedResultController.object(at: indexPath)
+        //selectedPhotos = selectedPhotos.filter(){$0 != selectedPhoto}
+        selectedPhotos.removeValue(forKey: indexPath)
+        let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
+        cell.backgroundColor = UIColor.orange
+        cell.alpha = 1
+        
+        if selectedPhotos.isEmpty {
+            toggleEditMode(edit: false)
+        }
+    }
+    
     
     //    MARK NSFetchedResultsControllerDelegate
-    //        func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-    //            blockOperations = []
-    //        }
-    //
-    //        func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-    //            switch type {
-    //            case .insert:
-    //                blockOperations.append(BlockOperation(block: {
-    //                    self.collectionView.insertItems(at: [newIndexPath!])
-    //                }))
-    //            case .delete:
-    //                blockOperations.append(BlockOperation(block: {
-    //                    self.collectionView.insertItems(at: [indexPath!])
-    //                }))
-    //            case .update:
-    //                blockOperations.append(BlockOperation(block: {
-    //                    self.collectionView.reloadItems(at: [indexPath!])
-    //                }))
-    //            case .move:
-    //                blockOperations.append(BlockOperation(block: {
-    //                    self.collectionView.moveItem(at: indexPath!, to: newIndexPath!)
-    //                }))
-    //            }
-    //        }
-    //
-    //
-    //        func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-    //            print("Perform updates!")
-    //            collectionView.performBatchUpdates({
-    //                for operation in self.blockOperations {
-    //                    operation.start()
-    //                }
-    //            }) { (finished) in
-    //                self.blockOperations.removeAll(keepingCapacity: false)
-    //            }
-    //        }
+//            func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+//                blockOperations = []
+//            }
+//    
+//            func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+//                switch type {
+//                case .insert:
+//                    blockOperations.append(BlockOperation(block: {
+//                        self.collectionView.insertItems(at: [newIndexPath!])
+//                    }))
+//                case .delete:
+//                    blockOperations.append(BlockOperation(block: {
+//                        self.collectionView.insertItems(at: [indexPath!])
+//                    }))
+//                case .update:
+//                    blockOperations.append(BlockOperation(block: {
+//                        self.collectionView.reloadItems(at: [indexPath!])
+//                    }))
+//                case .move:
+//                    blockOperations.append(BlockOperation(block: {
+//                        self.collectionView.moveItem(at: indexPath!, to: newIndexPath!)
+//                    }))
+//                }
+//            }
+//    
+//    
+//            func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+//                print("Perform updates!")
+//                collectionView.performBatchUpdates({
+//                    for operation in self.blockOperations {
+//                        operation.start()
+//                    }
+//                }) { (finished) in
+//                    self.blockOperations.removeAll(keepingCapacity: false)
+//                }
+//            }
     
     
 }

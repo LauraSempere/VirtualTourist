@@ -110,37 +110,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         
     }
     
-    
-    
-    func getImagesForPhotos(completionHandler: @escaping (_ success:Bool, _ photoData:[NSData]?)-> Void) {
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            var imagesData:[NSData] = []
-            for (index, photo) in self.photoResults.enumerated() {
-                if let urlString = photo["url_m"] as? String {
-                    if let imageData = NSData(contentsOf: URL(string: urlString)!) {
-                        imagesData.append(imageData)
-                        
-                    }
-                    
-                }
-            }
-            
-            if imagesData.isEmpty {
-                completionHandler(false, nil)
-            } else {
-                completionHandler(true, imagesData)
-            }
-            
-            
-        }
-        
-        
-    }
-    
-    
-    
-    
     func getImageForPhoto(index:Int, completionHandler: @escaping (_ success:Bool, _ photoData:NSData?)-> Void) {
         if photoResults.count > index {
             DispatchQueue.global(qos: .userInitiated).async {
@@ -168,28 +137,24 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func removeMeta() {
         toggleLoadingState(loading: true)
-        //        context.performAndWait {
-        //            for photo in self.fetchedResultController.fetchedObjects! {
-        //                self.context.delete(photo)
-        //            }
-        //            do {
-        //                try self.context.save()
-        //
-        //            } catch let err {
-        //                print("Deleting objetcs error: \(err)")
-        //            }
-        //        }
-        // collectionView.reloadData()
+//        context.performAndWait {
+//            for photo in self.fetchedResultController.fetchedObjects! {
+//                self.context.delete(photo)
+//            }
+//            do {
+//                try self.context.save()
+//                
+//            } catch let err {
+//                print("Deleting objetcs error: \(err)")
+//            }
+//        }
+//        collectionView.reloadData()
         getPhotosFromFlickr()
     }
     
     
     func getPhotosFromFlickr() {
-        print("Photos????? --- \(location.photos)")
-        //collectionView.reloadData()
-        
         self.flickr.getPhotosForLocation(location: location) { (success, results, meta, errorString) in
-            
             if success {
                 self.context.performAndWait {
                     if let prevMeta = self.location.meta {
@@ -206,7 +171,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
                 
                 self.showPhotos()
-                self.photoResults = results!
                 
                 self.context.performAndWait {
                     guard let meta = meta else {return}
@@ -235,7 +199,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
                 self.showPhotos()
                 
-        }
+            }
             
             
         }
@@ -262,10 +226,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
-        
-        
+        cell.image.isHidden = true
         
         if let savedImageData = fetchedResultController.object(at: indexPath).image {
+            cell.image.isHidden = false
             cell.image.image = UIImage(data: savedImageData as Data)
             cell.activityIndicator.stopAnimating()
             cell.activityIndicator.isHidden = true
@@ -283,7 +247,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                     } catch let error {
                         print("Error saving image data:\(error)")
                     }
-                    // cell.image.image = UIImage(data: imageData as! Data)
                 }
             })
         }

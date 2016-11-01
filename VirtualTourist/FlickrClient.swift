@@ -37,7 +37,7 @@ class FlickrClient:NSObject {
             Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,
             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
-            Constants.FlickrParameterKeys.PerPage: "21",
+            Constants.FlickrParameterKeys.PerPage: "4",
             Constants.FlickrParameterKeys.Page: "1"]
 
         if let meta = meta {

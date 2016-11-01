@@ -53,9 +53,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             
         } else {
             toggleLoadingState(loading: true)
+            actionButton.isEnabled = false
             removeAndGetNewPhotos()
-//            toggleLoadingState(loading: true)
-//            getPhotosFromFlickr(locID: location.objectID)
         }
         
     }
@@ -83,7 +82,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         let center = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
         let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 25.0, longitudeDelta: 25.0))
         mapView.setRegion(region, animated: true)
-
+        
         
         getPhotosForCurrentLocation()
         
@@ -91,6 +90,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             toggleLoadingState(loading: false)
         } else {
             toggleLoadingState(loading: true)
+            actionButton.isEnabled = false
             getPhotosFromFlickr(locID: location.objectID)
         }
         
@@ -125,24 +125,30 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             actionButton.title = "Delete Selected Photos"
         } else {
             editMode = false
-            actionButton.title = "Get More Images"
+            actionButton.title = "Get New Images"
         }
     }
     
-    
-    func getImageForPhoto(index:Int, photoID: NSManagedObjectID) {
-        self.bgContext.perform {
-            do {
-                let photo = try self.bgContext.existingObject(with: photoID) as! Photo
-                guard let urlString = self.photoResults[index]["url_m"] as? String else {return}
-                guard let url = URL(string: urlString) else {return}
-                guard let imageData = NSData(contentsOf: url) else {return}
-                photo.image = imageData
-                try self.bgContext.save()
-                
-            } catch let error {
-                print("Error getting photo: \(error)")
+    func getImagesForPhotos() {
+        for (index, photoResult) in photoResults.enumerated() {
+            let photoID = fetchedResultController.object(at: IndexPath(item: index, section: 0)).objectID
+            bgContext.performAndWait {
+                do {
+                    let photo = try self.bgContext.existingObject(with: photoID) as! Photo
+                    guard let urlString = photoResult["url_m"] as? String else {return}
+                    guard let url = URL(string: urlString) else {return}
+                    guard let imageData = NSData(contentsOf: url) else {return}
+                    photo.image = imageData
+                    try self.bgContext.save()
+                    
+                } catch let error {
+                    print("Error getting photo: \(error)")
+                }
             }
+            
+        }
+        performUIUpdatesOnMain {
+            self.actionButton.isEnabled = true
         }
     }
     
@@ -191,7 +197,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                         
                         do {
                             try self.bgContext.save()
-                            //self.getPhotosForCurrentLocation()
                         } catch let err {
                             print("Error removing meta: \(err)")
                         }
@@ -226,17 +231,18 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                     }
                     
                 }
-                
-                performUIUpdatesOnMain {
-                    self.toggleLoadingState(loading: false)
+                self.context.performAndWait {
+                    performUIUpdatesOnMain {
+                        self.toggleLoadingState(loading: false)
+                    }
                 }
+                
+                self.getImagesForPhotos()
                 
             }
         }
         
     }
-    
-    
     
     
     // MARK: CollectionView Data Source
@@ -275,10 +281,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             cell.activityIndicator.isHidden = false
             cell.image.isHidden = false
             cell.backgroundColor = UIColor.orange
-            if photoResults.count > indexPath.item {
-                let photo = fetchedResultController.object(at: indexPath)
-                getImageForPhoto(index: indexPath.item, photoID: photo.objectID)
-            }
         }
     }
     
@@ -355,13 +357,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             break
             
         default: break
+        
         }
     }
     
-    
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        
-        print("Perform updates!")
         collectionView.performBatchUpdates({
             for operation in self.blockOperations {
                 operation.start()
@@ -370,7 +370,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             self.blockOperations.removeAll(keepingCapacity: false)
         }
     }
-    
     
 }
 

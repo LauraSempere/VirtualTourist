@@ -16,6 +16,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var actionButton: UIBarButtonItem!
     @IBOutlet weak var activityIndicator:UIActivityIndicatorView!
+    @IBOutlet weak var noPhotosFoundLabel:UILabel!
     
     var context:NSManagedObjectContext!
     var bgContext:NSManagedObjectContext!
@@ -42,6 +43,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
                 do {
                     try self.bgContext.save()
+                    self.selectedPhotos = []
                     
                 } catch let error {
                     print("Error removing selected photos: \(error)")
@@ -79,6 +81,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        noPhotosFoundLabel.isHidden = true
+        
         let center = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
         let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 25.0, longitudeDelta: 25.0))
         mapView.setRegion(region, animated: true)
@@ -125,7 +129,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             actionButton.title = "Delete Selected Photos"
         } else {
             editMode = false
-            actionButton.title = "Get New Images"
+            actionButton.title = "New Collection"
         }
     }
     
@@ -154,6 +158,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func removeAndGetNewPhotos() {
         var photosID:[NSManagedObjectID] = []
+        noPhotosFoundLabel.isHidden = true
         for photo in fetchedResultController.fetchedObjects! {
             photosID.append(photo.objectID)
         }
@@ -236,8 +241,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                         self.toggleLoadingState(loading: false)
                     }
                 }
+                self.bgContext.performAndWait {
+                    if results!.count > 0 {
+                        self.getImagesForPhotos()
+                    } else {
+                        performUIUpdatesOnMain {
+                            self.noPhotosFoundLabel.isHidden = false
+                        }
+                    }
+                }
                 
-                self.getImagesForPhotos()
+                //self.getImagesForPhotos()
                 
             }
         }
@@ -357,7 +371,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             break
             
         default: break
-        
+            
         }
     }
     

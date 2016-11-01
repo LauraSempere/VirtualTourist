@@ -51,14 +51,8 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="Qgz-0Y-tcN"/>
-                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" misplaced="YES" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="T0a-kr-o15">
-                                <frame key="frameInset" width="1000" height="1000"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="220" id="z4t-d3-wMC"/>
-                                </constraints>
-                            </mapView>
-                            <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" misplaced="YES" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="EyM-Hb-7Z6">
-                                <frame key="frameInset" width="1000" height="1000"/>
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="T0a-kr-o15"/>
+                            <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="EyM-Hb-7Z6">
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="5" minimumInteritemSpacing="1" id="NFe-jC-tiX">
                                     <size key="itemSize" width="122" height="115"/>
@@ -93,10 +87,15 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No photos found in current location" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="USl-mS-MiU">
+                                <fontDescription key="fontDescription" name="HelveticaNeue" family="Helvetica Neue" pointSize="20"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                             <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dEf-JK-Aru">
                                 <items>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="0k4-Fe-BKg"/>
-                                    <barButtonItem title="Get New Images" id="SUN-qg-8Gs">
+                                    <barButtonItem title="New Collection" id="SUN-qg-8Gs">
                                         <connections>
                                             <action selector="excuteAction:" destination="mT5-Dx-fb0" id="b4V-mw-hXX"/>
                                         </connections>
@@ -109,16 +108,20 @@
                         <constraints>
                             <constraint firstItem="Qgz-0Y-tcN" firstAttribute="centerX" secondItem="in0-Mv-0OB" secondAttribute="centerX" id="2N3-ec-ATD"/>
                             <constraint firstItem="B6X-VP-ZcY" firstAttribute="top" secondItem="dEf-JK-Aru" secondAttribute="bottom" id="3ou-pI-qVr"/>
-                            <constraint firstItem="B6X-VP-ZcY" firstAttribute="top" secondItem="EyM-Hb-7Z6" secondAttribute="bottom" id="C2B-01-H3o"/>
-                            <constraint firstItem="T0a-kr-o15" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="F86-qd-yLD"/>
-                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="top" secondItem="T0a-kr-o15" secondAttribute="bottom" constant="2" id="KhP-pb-Kjp"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="EyM-Hb-7Z6" secondAttribute="trailing" constant="-16" id="Qc8-r5-Agp"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="T0a-kr-o15" secondAttribute="trailing" constant="-16" id="UTR-Be-x54"/>
-                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="clg-Kb-4jB"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="USl-mS-MiU" secondAttribute="trailing" id="9uU-kS-2LO"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="T0a-kr-o15" secondAttribute="trailing" constant="-16" id="ATD-o4-vtl"/>
+                            <constraint firstAttribute="leadingMargin" secondItem="USl-mS-MiU" secondAttribute="leading" id="CAt-gK-bCF"/>
+                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="top" secondItem="QNr-dn-kRI" secondAttribute="bottom" constant="145" id="IbI-Jr-OcR"/>
+                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="top" secondItem="T0a-kr-o15" secondAttribute="bottom" constant="8" id="M4L-dQ-xD5"/>
+                            <constraint firstItem="T0a-kr-o15" firstAttribute="top" secondItem="QNr-dn-kRI" secondAttribute="bottom" constant="-20" id="PJe-AR-fRQ"/>
+                            <constraint firstItem="B6X-VP-ZcY" firstAttribute="top" secondItem="EyM-Hb-7Z6" secondAttribute="bottom" id="R1G-lI-hj7"/>
+                            <constraint firstItem="USl-mS-MiU" firstAttribute="centerY" secondItem="in0-Mv-0OB" secondAttribute="centerY" id="ZO4-QL-rxD"/>
                             <constraint firstItem="Qgz-0Y-tcN" firstAttribute="centerY" secondItem="in0-Mv-0OB" secondAttribute="centerY" id="dyQ-2T-WeB"/>
-                            <constraint firstItem="T0a-kr-o15" firstAttribute="top" secondItem="in0-Mv-0OB" secondAttribute="top" id="egH-SU-DgN"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="EyM-Hb-7Z6" secondAttribute="trailing" constant="-16" id="gd6-Ol-4il"/>
+                            <constraint firstItem="T0a-kr-o15" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="mGt-bS-lC6"/>
                             <constraint firstItem="dEf-JK-Aru" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="mhZ-Qy-RI7"/>
                             <constraint firstAttribute="trailingMargin" secondItem="dEf-JK-Aru" secondAttribute="trailing" constant="-16" id="oPK-9U-yLl"/>
+                            <constraint firstItem="EyM-Hb-7Z6" firstAttribute="leading" secondItem="in0-Mv-0OB" secondAttribute="leadingMargin" constant="-16" id="v4D-yz-pcc"/>
                         </constraints>
                     </view>
                     <connections>
@@ -126,6 +129,7 @@
                         <outlet property="activityIndicator" destination="Qgz-0Y-tcN" id="mwq-xQ-X0t"/>
                         <outlet property="collectionView" destination="EyM-Hb-7Z6" id="08u-HV-XzU"/>
                         <outlet property="mapView" destination="T0a-kr-o15" id="kgS-dI-p3t"/>
+                        <outlet property="noPhotosFoundLabel" destination="USl-mS-MiU" id="4on-8h-Vn9"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="xtf-f7-fm7" userLabel="First Responder" sceneMemberID="firstResponder"/>

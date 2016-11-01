@@ -23,7 +23,7 @@ class FlickrClient:NSObject {
         for (k, v) in params {
             queryItems.append(URLQueryItem(name: k, value: "\(v)"))
         }
-    
+        
         components.queryItems = queryItems
         return components.url!
     }
@@ -39,15 +39,17 @@ class FlickrClient:NSObject {
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
             Constants.FlickrParameterKeys.PerPage: "4",
             Constants.FlickrParameterKeys.Page: "1"]
-
+        
         if let meta = meta {
             print("Fotos for new meta...")
             var currentPage = Int(meta.page)
             var pages = Int(min(meta.pages, 4000))
             var newPage = Int(random: Range(uncheckedBounds: (lower: 1, upper: pages)))
-            repeat {
-                newPage = Int(random: Range(uncheckedBounds: (lower: 1, upper: pages)))
-            } while currentPage == newPage
+            if pages > 1 {
+                repeat {
+                    newPage = Int(random: Range(uncheckedBounds: (lower: 1, upper: pages)))
+                } while currentPage == newPage
+            }
             
             methodParameters[Constants.FlickrParameterKeys.Page] = String(newPage)
             
@@ -69,7 +71,7 @@ class FlickrClient:NSObject {
                 if let err = error {
                     completionHandler(false, nil, nil, err)
                 } else {
-                   completionHandler(true, results, meta, nil)
+                    completionHandler(true, results, meta, nil)
                 }
                 
             }
@@ -109,7 +111,7 @@ class FlickrClient:NSObject {
                     sendError(error: (error?.localizedDescription)!)
                     return
                 }
-               
+                
                 guard let result = result else {
                     sendError(error: "No results were deserialized")
                     return
@@ -162,11 +164,11 @@ class FlickrClient:NSObject {
     }
     
     private func createBBox(longitude: Double, latitude:Double) -> String{
-            let minLon = max((longitude - Constants.Flickr.SearchBBoxHalfWidth), Constants.Flickr.SearchLonRange.0)
-            let minLat = max((latitude - Constants.Flickr.SearchBBoxHalfHeight), Constants.Flickr.SearchLatRange.0)
-            let maxLon = min((longitude + Constants.Flickr.SearchBBoxHalfWidth) , Constants.Flickr.SearchLonRange.1)
-            let maxLat = min((latitude + Constants.Flickr.SearchBBoxHalfHeight), Constants.Flickr.SearchLatRange.1)
-            return "\(minLon),\(minLat),\(maxLon),\(maxLat)"
+        let minLon = max((longitude - Constants.Flickr.SearchBBoxHalfWidth), Constants.Flickr.SearchLonRange.0)
+        let minLat = max((latitude - Constants.Flickr.SearchBBoxHalfHeight), Constants.Flickr.SearchLatRange.0)
+        let maxLon = min((longitude + Constants.Flickr.SearchBBoxHalfWidth) , Constants.Flickr.SearchLonRange.1)
+        let maxLat = min((latitude + Constants.Flickr.SearchBBoxHalfHeight), Constants.Flickr.SearchLatRange.1)
+        return "\(minLon),\(minLat),\(maxLon),\(maxLat)"
         
     }
     
@@ -176,7 +178,7 @@ class FlickrClient:NSObject {
         }
         return Singleton.sharedInstance
     }
-
+    
     
 }
 

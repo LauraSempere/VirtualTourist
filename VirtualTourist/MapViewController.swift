@@ -112,7 +112,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         UserDefaults.standard.set(currentLat, forKey: "latitude")
         UserDefaults.standard.set(deltaLat, forKey: "deltaLatitude")
         UserDefaults.standard.set(deltaLong, forKey: "deltaLongitude")
-       
+        
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {

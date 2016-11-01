@@ -2,12 +2,12 @@
 //  Pin+CoreDataProperties.swift
 //  VirtualTourist
 //
-//  Created by Laura Scully on 30/10/2016.
+//  Created by Laura Scully on 1/11/2016.
 //  Copyright © 2016 laura.sempere.com. All rights reserved.
 //
 
 import Foundation
-import CoreData
+import CoreData 
 
 extension Pin {
 

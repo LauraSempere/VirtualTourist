@@ -22,11 +22,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     var blockOperations:[BlockOperation] = [BlockOperation]()
     var location:Pin!
     var meta:Meta!
-    var photos:[Photo] = [Photo]()
     let flickr = FlickrClient.sharedInstance()
     var photoResults: [[String:AnyObject]] = []
     
-    var selectedPhotos:[IndexPath: Photo] = [:]
+    var selectedPhotos:[NSManagedObjectID] = []
     var editMode:Bool = false
     
     //    var insertedIndexPaths: [IndexPath]!
@@ -38,37 +37,27 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     @IBAction func excuteAction(_ sender: AnyObject) {
         if editMode {
-            self.context.performAndWait {
-                for (k, selected) in self.selectedPhotos {
-                    self.context.delete(selected)
-                    self.collectionView.deleteItems(at: [k])
-                    self.collectionView.reloadData()
+            self.bgContext.performAndWait {
+                for selectedID in self.selectedPhotos {
+                    do {
+                        let photo = try self.bgContext.existingObject(with: selectedID)
+                        self.bgContext.delete(photo)
+                    } catch let err {
+                        print("Err finding selected photo in bgContext: \(err)")
+                    }
                 }
-                
-                self.selectedPhotos = [:]
                 do {
-                    try self.context.save()
-                    print("Remove Selected Images")
+                    try self.bgContext.save()
+                    
                 } catch let error {
-                    print("Error removing photos: \(error)")
+                    print("Error removing selected photos: \(error)")
                 }
-                //collectionView.reloadData()
-                
             }
-            
-            
-            //selectedPhotos = [:]
-            //            do {
-            //                try context.save()
-            //                print("Remove Selected Images")
-            //            } catch let error {
-            //                print("Error removing photos: \(error)")
-            //            }
-            //collectionView.reloadData()
             
         } else {
             removeMeta()
-            print("Get new images from Flickr")
+//            toggleLoadingState(loading: true)
+//            getPhotosFromFlickr(locID: location.objectID)
         }
         
     }
@@ -77,14 +66,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         super.viewDidLoad()
         let request:NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate:NSPredicate = NSPredicate(format: "pin = %@", location)
-        let sortDescriptor = NSSortDescriptor(key: "image", ascending: true)
+        let sortDescriptor = NSSortDescriptor(key: "created", ascending: true)
         request.sortDescriptors = [sortDescriptor]
         request.predicate = predicate
         context.automaticallyMergesChangesFromParent = true
         
         fetchedResultController = NSFetchedResultsController(fetchRequest: request, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
         fetchedResultController.delegate = self
-
+        
         getPhotosForCurrentLocation()
         collectionView.dataSource = self
         collectionView.delegate = self
@@ -99,7 +88,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         if (fetchedResultController.fetchedObjects?.count)! > 0 {
             toggleLoadingState(loading: false)
         } else {
-            toggleLoadingState(loading: false)
+            toggleLoadingState(loading: true)
             getPhotosFromFlickr(locID: location.objectID)
         }
         
@@ -149,7 +138,23 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         
     }
     
-    func getImageForPhoto(index:Int, completionHandler: @escaping (_ success:Bool, _ photoData:NSData?)-> Void) {
+    func getImageForPhoto(index:Int, photoID: NSManagedObjectID) {
+        self.bgContext.perform {
+            do {
+                let photo = try self.bgContext.existingObject(with: photoID) as! Photo
+                guard let urlString = self.photoResults[index]["url_m"] as? String else {return}
+                guard let url = URL(string: urlString) else {return}
+                guard let imageData = NSData(contentsOf: url) else {return}
+                photo.image = imageData
+                try self.bgContext.save()
+                
+            } catch let error {
+                print("Error getting photo: \(error)")
+            }
+        }
+    }
+    
+    func getImageForPhoto2(index:Int, completionHandler: @escaping (_ success:Bool, _ photoData:NSData?)-> Void) {
         if photoResults.count > index {
             DispatchQueue.global(qos: .userInitiated).async {
                 
@@ -176,19 +181,27 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func removeMeta() {
         toggleLoadingState(loading: true)
-        //        context.performAndWait {
-        //            for photo in self.fetchedResultController.fetchedObjects! {
-        //                self.context.delete(photo)
-        //            }
-        //            do {
-        //                try self.context.save()
-        //
-        //            } catch let err {
-        //                print("Deleting objetcs error: \(err)")
-        //            }
-        //        }
-        //        collectionView.reloadData()
-       // getPhotosFromFlickr()
+        var photosID:[NSManagedObjectID] = []
+        for photo in fetchedResultController.fetchedObjects! {
+            photosID.append(photo.objectID)
+        }
+        bgContext.performAndWait {
+            for photoID in photosID {
+                do {
+                    let photo = try self.bgContext.existingObject(with: photoID)
+                    self.bgContext.delete(photo)
+                } catch let err {
+                    print("Err getting photo: \(err)")
+                }
+            }
+            do {
+                try self.bgContext.save()
+                
+            } catch let err {
+                print("Deleting objetcs error: \(err)")
+            }
+        }
+        getPhotosFromFlickr(locID: location.objectID)
     }
     
     
@@ -206,22 +219,18 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
                 
                 self.bgContext.performAndWait {
-                        if let prevMeta = loc.meta {
-                            print("Removing prev meta")
-                            self.bgContext.delete(prevMeta)
-                            
-                            do {
-                                try self.bgContext.save()
-                                //self.getPhotosForCurrentLocation()
-                            } catch let err {
-                                print("Error removing meta: \(err)")
-                            }
-                        }
+                    if let prevMeta = loc.meta {
+                        print("Removing prev meta")
+                        self.bgContext.delete(prevMeta)
                         
-
+                        do {
+                            try self.bgContext.save()
+                            //self.getPhotosForCurrentLocation()
+                        } catch let err {
+                            print("Error removing meta: \(err)")
+                        }
+                    }
                 }
-                
-                //self.showPhotos()
                 
                 self.bgContext.performAndWait {
                     guard let meta = meta else {return}
@@ -237,6 +246,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                     
                     for result in results {
                         var newPhoto = Photo(context: self.bgContext)
+                        newPhoto.created = NSDate()
                         newPhoto.pin = loc
                         newPhoto.meta = newMeta
                     }
@@ -251,9 +261,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
                 
                 performUIUpdatesOnMain {
-                    print("Refreshing All Objects")
-                    //self.bgContext.automaticallyMergesChangesFromParent
-                    //self.getPhotosForCurrentLocation()
+                    self.toggleLoadingState(loading: false)
                 }
                 
             }
@@ -285,7 +293,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
         cell.image.isHidden = true
-        
+        configureCell(cell: cell, indexPath: indexPath)
+        return cell
+    }
+    
+    func  configureCell(cell: PhotoAlbumCell, indexPath: IndexPath) {
         if let savedImageData = fetchedResultController.object(at: indexPath).image {
             cell.image.isHidden = false
             cell.image.image = UIImage(data: savedImageData as Data)
@@ -294,21 +306,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         } else {
             cell.activityIndicator.startAnimating()
             cell.activityIndicator.isHidden = false
+            cell.image.image = UIImage(named: "placeholder")
+            cell.image.isHidden = false
             cell.backgroundColor = UIColor.orange
-//           let photo = fetchedResultController.object(at: indexPath)
-//            getImageForPhoto(index: indexPath.item, completionHandler: { (success, imageData) in
-//                if success {
-//                    photo.image = imageData
-//                    do {
-//                        try self.context.save()
-//                        self.collectionView.reloadItems(at: [indexPath])
-//                    } catch let error {
-//                        print("Error saving image data:\(error)")
-//                    }
-//                }
-//            })
+            if photoResults.count > indexPath.item {
+                let photo = fetchedResultController.object(at: indexPath)
+                getImageForPhoto(index: indexPath.item, photoID: photo.objectID)
+            }
         }
-        return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -317,7 +322,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         }
         
         let selectedPhoto = fetchedResultController.object(at: indexPath)
-        selectedPhotos[indexPath] = selectedPhoto
+        selectedPhotos.append(selectedPhoto.objectID)
         let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
         cell.backgroundColor = UIColor.cyan
         cell.alpha = 0.4
@@ -325,8 +330,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         let selectedPhoto = fetchedResultController.object(at: indexPath)
-        //selectedPhotos = selectedPhotos.filter(){$0 != selectedPhoto}
-        selectedPhotos.removeValue(forKey: indexPath)
+        selectedPhotos = selectedPhotos.filter(){$0 != selectedPhoto.objectID}
         let cell = collectionView.cellForItem(at: indexPath) as! PhotoAlbumCell
         cell.backgroundColor = UIColor.orange
         cell.alpha = 1
@@ -338,7 +342,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     
     //    MARK NSFetchedResultsControllerDelegate
-
+    
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         blockOperations = [BlockOperation]()
     }
@@ -352,22 +356,38 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
             }
             blockOperations.append(op)
+            break
             
-        case .update: // Update
-            //guard let newIndexPath = newIndexPath else { return }
-            let op = BlockOperation { print("Update Operation was Detected +++")}
+        case .update:
+            let op = BlockOperation {
+                if let indexPath = indexPath, let cell = self.collectionView.cellForItem(at: indexPath) as? PhotoAlbumCell {
+                    self.configureCell(cell: cell, indexPath: indexPath)
+                }
+            }
             blockOperations.append(op)
+            break
             
-        case .move: // Move
-            //guard let indexPath = indexPath else { return }
-            //guard let newIndexPath = newIndexPath else { return }
-            let op = BlockOperation { print("Move Operation was Detected +++")}
+        case .move:
+            let op = BlockOperation {
+                if let indexPath = indexPath {
+                    self.collectionView.deleteItems(at: [indexPath])
+                }
+                if let newIndexPath = newIndexPath {
+                    self.collectionView.insertItems(at: [newIndexPath])
+                }
+            }
             blockOperations.append(op)
+            break
             
-        case .delete: // Delete
-           // guard let newIndexPath = newIndexPath else { return }
-            let op = BlockOperation { print("Delete Operation was Detected +++")}
+        case .delete:
+            let op = BlockOperation {
+                if let indexPath = indexPath {
+                    self.collectionView.deleteItems(at: [indexPath])
+                }
+            }
             blockOperations.append(op)
+            break
+            
         default: break
         }
     }

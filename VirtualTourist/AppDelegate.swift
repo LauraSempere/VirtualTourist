@@ -18,10 +18,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         let managedObjectContext = coreData.persistentContainer.viewContext
+        let bgManagedObjectContext = coreData.persistentContainer.newBackgroundContext()
         
         let navigationController = self.window?.rootViewController as! UINavigationController
         let mapViewController = navigationController.topViewController as! MapViewController
         mapViewController.context = managedObjectContext
+        mapViewController.bgContext = bgManagedObjectContext
         
         return true
     }

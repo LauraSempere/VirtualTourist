@@ -16,6 +16,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     var longTapGesture:UILongPressGestureRecognizer!
     var editModde:Bool = false
     var context:NSManagedObjectContext!
+    var bgContext:NSManagedObjectContext!
     var savedPins = [Pin]()
     
     override func viewDidLoad() {
@@ -115,6 +116,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             let photoAlbumVC = self.storyboard?.instantiateViewController(withIdentifier: "PhotoAlbumVC") as? PhotoAlbumViewController
             photoAlbumVC?.location = selectedPin
             photoAlbumVC?.context = context
+            photoAlbumVC?.bgContext = bgContext
             self.navigationController?.pushViewController(photoAlbumVC!, animated: true)
             
         }

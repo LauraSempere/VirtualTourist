@@ -18,6 +18,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     @IBOutlet weak var activityIndicator:UIActivityIndicatorView!
     
     var context:NSManagedObjectContext!
+    var bgContext:NSManagedObjectContext!
     var blockOperations:[BlockOperation] = [BlockOperation]()
     var location:Pin!
     var meta:Meta!
@@ -37,18 +38,32 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     @IBAction func excuteAction(_ sender: AnyObject) {
         if editMode {
-            for (k, selected) in selectedPhotos {
-                self.context.delete(selected)
-                //self.collectionView.deleteItems(at: [k])
+            self.context.performAndWait {
+                for (k, selected) in self.selectedPhotos {
+                    self.context.delete(selected)
+                    self.collectionView.deleteItems(at: [k])
+                    self.collectionView.reloadData()
+                }
+                
+                self.selectedPhotos = [:]
+                do {
+                    try self.context.save()
+                    print("Remove Selected Images")
+                } catch let error {
+                    print("Error removing photos: \(error)")
+                }
+                //collectionView.reloadData()
+                
             }
             
-            selectedPhotos = [:]
-//            do {
-//                try context.save()
-//                print("Remove Selected Images")
-//            } catch let error {
-//                print("Error removing photos: \(error)")
-//            }
+            
+            //selectedPhotos = [:]
+            //            do {
+            //                try context.save()
+            //                print("Remove Selected Images")
+            //            } catch let error {
+            //                print("Error removing photos: \(error)")
+            //            }
             //collectionView.reloadData()
             
         } else {
@@ -60,7 +75,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //getPhotosForCurrentLocation()
+        let request:NSFetchRequest<Photo> = Photo.fetchRequest()
+        let predicate:NSPredicate = NSPredicate(format: "pin = %@", location)
+        let sortDescriptor = NSSortDescriptor(key: "image", ascending: true)
+        request.sortDescriptors = [sortDescriptor]
+        request.predicate = predicate
+        context.automaticallyMergesChangesFromParent = true
+        
+        fetchedResultController = NSFetchedResultsController(fetchRequest: request, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
+        fetchedResultController.delegate = self
+
+        getPhotosForCurrentLocation()
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.allowsMultipleSelection = true
@@ -74,23 +99,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         if (fetchedResultController.fetchedObjects?.count)! > 0 {
             toggleLoadingState(loading: false)
         } else {
-            toggleLoadingState(loading: true)
-            getPhotosFromFlickr()
+            toggleLoadingState(loading: false)
+            getPhotosFromFlickr(locID: location.objectID)
         }
         
         
     }
     
     func getPhotosForCurrentLocation(){
-        let request:NSFetchRequest<Photo> = Photo.fetchRequest()
-        let predicate:NSPredicate = NSPredicate(format: "pin = %@", location)
-        let sortDescriptor = NSSortDescriptor(key: "image", ascending: true)
-        request.sortDescriptors = [sortDescriptor]
-        request.predicate = predicate
-        
-        fetchedResultController = NSFetchedResultsController(fetchRequest: request, managedObjectContext: context, sectionNameKeyPath: nil, cacheName: nil)
-        fetchedResultController.delegate = self
-        
         do {
             try fetchedResultController.performFetch()
         } catch let error {
@@ -125,10 +141,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func showPhotos() {
         print("Job Done")
-        getPhotosForCurrentLocation()
+        //getPhotosForCurrentLocation()
         performUIUpdatesOnMain {
             self.toggleLoadingState(loading: false)
-            self.collectionView.reloadData()
+            //self.collectionView.reloadData()
         }
         
     }
@@ -160,73 +176,91 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func removeMeta() {
         toggleLoadingState(loading: true)
-//        context.performAndWait {
-//            for photo in self.fetchedResultController.fetchedObjects! {
-//                self.context.delete(photo)
-//            }
-//            do {
-//                try self.context.save()
-//                
-//            } catch let err {
-//                print("Deleting objetcs error: \(err)")
-//            }
-//        }
-//        collectionView.reloadData()
-        getPhotosFromFlickr()
+        //        context.performAndWait {
+        //            for photo in self.fetchedResultController.fetchedObjects! {
+        //                self.context.delete(photo)
+        //            }
+        //            do {
+        //                try self.context.save()
+        //
+        //            } catch let err {
+        //                print("Deleting objetcs error: \(err)")
+        //            }
+        //        }
+        //        collectionView.reloadData()
+       // getPhotosFromFlickr()
     }
     
     
-    func getPhotosFromFlickr() {
+    func getPhotosFromFlickr(locID:NSManagedObjectID) {
         self.flickr.getPhotosForLocation(location: location) { (success, results, meta, errorString) in
             if success {
-                self.context.performAndWait {
-                    if let prevMeta = self.location.meta {
-                        print("Removing prev meta")
-                        self.context.delete(prevMeta)
-                        
-                        do {
-                            try self.context.save()
-                            self.getPhotosForCurrentLocation()
-                        } catch let err {
-                            print("Error removing meta: \(err)")
-                        }
+                var loc:Pin!
+                
+                self.bgContext.performAndWait {
+                    do {
+                        loc = try self.bgContext.existingObject(with: locID) as! Pin
+                    } catch let err {
+                        print("Error getting location in bgContext... \(err)")
                     }
                 }
                 
-                self.showPhotos()
+                self.bgContext.performAndWait {
+                        if let prevMeta = loc.meta {
+                            print("Removing prev meta")
+                            self.bgContext.delete(prevMeta)
+                            
+                            do {
+                                try self.bgContext.save()
+                                //self.getPhotosForCurrentLocation()
+                            } catch let err {
+                                print("Error removing meta: \(err)")
+                            }
+                        }
+                        
+
+                }
                 
-                self.context.performAndWait {
+                //self.showPhotos()
+                
+                self.bgContext.performAndWait {
                     guard let meta = meta else {return}
                     guard let results = results else {return}
                     self.photoResults = results
-                    var newMeta = Meta(context: self.context)
+                    var newMeta = Meta(context: self.bgContext)
                     newMeta.page = Int32(meta["page"]!)
                     newMeta.pages = Int32(meta["pages"]!)
                     
-                    newMeta.pin = self.location
-                    self.location.meta = newMeta
+                    newMeta.pin = loc
+                    loc.meta = newMeta
                     
                     
                     for result in results {
-                        var newPhoto = Photo(context: self.context)
-                        newPhoto.pin = self.location
+                        var newPhoto = Photo(context: self.bgContext)
+                        newPhoto.pin = loc
                         newPhoto.meta = newMeta
                     }
                     
                     do {
-                        try self.context.save()
+                        print("Before saving BG Context +++")
+                        try self.bgContext.save()
                     } catch let error {
                         print("Error saving photos: \(error)")
                     }
                     
                 }
-                self.showPhotos()
+                
+                performUIUpdatesOnMain {
+                    print("Refreshing All Objects")
+                    //self.bgContext.automaticallyMergesChangesFromParent
+                    //self.getPhotosForCurrentLocation()
+                }
                 
             }
-            
-            
         }
+        
     }
+    
     
     
     
@@ -244,6 +278,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             let currentSection = sections[section]
             return currentSection.numberOfObjects
         }
+        
         return 0
     }
     
@@ -260,18 +295,18 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             cell.activityIndicator.startAnimating()
             cell.activityIndicator.isHidden = false
             cell.backgroundColor = UIColor.orange
-            let photo = fetchedResultController.object(at: indexPath)
-            getImageForPhoto(index: indexPath.item, completionHandler: { (success, imageData) in
-                if success {
-                    photo.image = imageData
-                    do {
-                        try self.context.save()
-                        self.collectionView.reloadItems(at: [indexPath])
-                    } catch let error {
-                        print("Error saving image data:\(error)")
-                    }
-                }
-            })
+//           let photo = fetchedResultController.object(at: indexPath)
+//            getImageForPhoto(index: indexPath.item, completionHandler: { (success, imageData) in
+//                if success {
+//                    photo.image = imageData
+//                    do {
+//                        try self.context.save()
+//                        self.collectionView.reloadItems(at: [indexPath])
+//                    } catch let error {
+//                        print("Error saving image data:\(error)")
+//                    }
+//                }
+//            })
         }
         return cell
     }
@@ -303,42 +338,54 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     
     //    MARK NSFetchedResultsControllerDelegate
-//            func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-//                blockOperations = []
-//            }
-//    
-//            func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-//                switch type {
-//                case .insert:
-//                    blockOperations.append(BlockOperation(block: {
-//                        self.collectionView.insertItems(at: [newIndexPath!])
-//                    }))
-//                case .delete:
-//                    blockOperations.append(BlockOperation(block: {
-//                        self.collectionView.insertItems(at: [indexPath!])
-//                    }))
-//                case .update:
-//                    blockOperations.append(BlockOperation(block: {
-//                        self.collectionView.reloadItems(at: [indexPath!])
-//                    }))
-//                case .move:
-//                    blockOperations.append(BlockOperation(block: {
-//                        self.collectionView.moveItem(at: indexPath!, to: newIndexPath!)
-//                    }))
-//                }
-//            }
-//    
-//    
-//            func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-//                print("Perform updates!")
-//                collectionView.performBatchUpdates({
-//                    for operation in self.blockOperations {
-//                        operation.start()
-//                    }
-//                }) { (finished) in
-//                    self.blockOperations.removeAll(keepingCapacity: false)
-//                }
-//            }
+
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        blockOperations = [BlockOperation]()
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch type {
+        case .insert:
+            let op = BlockOperation {
+                if let indexPath = newIndexPath {
+                    self.collectionView.insertItems(at: [indexPath])
+                }
+            }
+            blockOperations.append(op)
+            
+        case .update: // Update
+            //guard let newIndexPath = newIndexPath else { return }
+            let op = BlockOperation { print("Update Operation was Detected +++")}
+            blockOperations.append(op)
+            
+        case .move: // Move
+            //guard let indexPath = indexPath else { return }
+            //guard let newIndexPath = newIndexPath else { return }
+            let op = BlockOperation { print("Move Operation was Detected +++")}
+            blockOperations.append(op)
+            
+        case .delete: // Delete
+           // guard let newIndexPath = newIndexPath else { return }
+            let op = BlockOperation { print("Delete Operation was Detected +++")}
+            blockOperations.append(op)
+        default: break
+        }
+    }
+    
+    
+    
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        
+        print("Perform updates!")
+        collectionView.performBatchUpdates({
+            for operation in self.blockOperations {
+                operation.start()
+            }
+        }) { (finished) in
+            self.blockOperations.removeAll(keepingCapacity: false)
+        }
+    }
     
     
 }

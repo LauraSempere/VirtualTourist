@@ -28,31 +28,7 @@ class FlickrClient:NSObject {
         return components.url!
     }
     
-    func getPhotosByLocation(longitude: Double, latitude: Double, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ meta: [String: Int]?, _ errorString: String?) -> Void){
-        let methodParameters: [String: String?] = [
-            Constants.FlickrParameterKeys.BoundingBox: createBBox(longitude: longitude, latitude: latitude),
-            Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
-            Constants.FlickrParameterKeys.SafeSearch: Constants.FlickrParameterValues.UseSafeSearch,
-            Constants.FlickrParameterKeys.Extras: Constants.FlickrParameterValues.MediumURL,
-            Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,
-            Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
-            Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
-            Constants.FlickrParameterKeys.PerPage: "14",
-            Constants.FlickrParameterKeys.Page: "1"]
-        
-        taskForGETMethod(params: methodParameters as [String : AnyObject]) {
-            (results: [[String: AnyObject]]?, meta: [String: Int]?, error: String?) in
-            if let err = error {
-               completionHandler(false, nil, nil, err)
-            } else {
-                completionHandler(true, results, meta, nil)
-            }
-            
-        }
-        
-    }
-    
-    func getPhotosForLocation(location:Pin, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ meta: [String: Int]?, _ errorString: String?) -> Void){
+    func getPhotosForLocation(location:Pin, meta: Meta?, completionHandler: @escaping (_ success: Bool, _ results: [[String: AnyObject]]?, _ meta: [String: Int]?, _ errorString: String?) -> Void){
         var methodParameters: [String: String?] = [
             Constants.FlickrParameterKeys.BoundingBox: createBBox(longitude: location.longitude, latitude: location.latitude),
             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
@@ -64,7 +40,7 @@ class FlickrClient:NSObject {
             Constants.FlickrParameterKeys.PerPage: "21",
             Constants.FlickrParameterKeys.Page: "1"]
 
-        if let meta = location.meta {
+        if let meta = meta {
             print("Fotos for new meta...")
             var currentPage = Int(meta.page)
             var pages = Int(min(meta.pages, 4000))

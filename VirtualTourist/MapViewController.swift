@@ -20,8 +20,21 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     var savedPins = [Pin]()
     
     override func viewDidLoad() {
+        print(mapView.region)
+        print("-----------")
         super.viewDidLoad()
         getAndDisplayPins()
+        if let longitude = UserDefaults.standard.value(forKey: "longitude") as? CLLocationDegrees {
+            if let latitude = UserDefaults.standard.value(forKey: "latitude") as? CLLocationDegrees {
+                if let deltaLongitude = UserDefaults.standard.value(forKey: "deltaLongitude") as? CLLocationDegrees {
+                    if let deltaLatitude = UserDefaults.standard.value(forKey: "deltaLatitude") as? CLLocationDegrees{
+                        let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), span: MKCoordinateSpan(latitudeDelta: deltaLatitude, longitudeDelta: deltaLongitude))
+                        mapView.setRegion(region, animated: true)
+                        
+                    }
+                }
+            }
+        }
         
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Edit", style: UIBarButtonItemStyle.done, target: self, action: #selector(MapViewController.startEditing))
         
@@ -31,6 +44,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         mapView.delegate = self
         
     }
+    
     
     func startEditing() {
         editModde = true
@@ -87,7 +101,22 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         }
     }
     
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        let currentLong:Double = mapView.region.center.longitude
+        let currentLat:Double = mapView.region.center.latitude
+        let deltaLong:Double = mapView.region.span.longitudeDelta
+        let deltaLat:Double = mapView.region.span.latitudeDelta
+        
+        UserDefaults.standard.set(currentLong, forKey: "longitude")
+        UserDefaults.standard.set(currentLat, forKey: "latitude")
+        UserDefaults.standard.set(deltaLat, forKey: "deltaLatitude")
+        UserDefaults.standard.set(deltaLong, forKey: "deltaLongitude")
+       
+    }
+    
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        print(mapView.center)
+        print(mapView.region)
         let request:NSFetchRequest = Pin.fetchRequest()
         let longPredicate = NSPredicate(format: "longitude = %@", argumentArray: [Double((view.annotation?.coordinate.longitude)!)])
         let latPredicate = NSPredicate(format: "latitude = %@", argumentArray: [Double((view.annotation?.coordinate.latitude)!)])

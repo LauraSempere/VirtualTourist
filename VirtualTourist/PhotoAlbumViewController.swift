@@ -27,12 +27,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     var selectedPhotos:[NSManagedObjectID] = []
     var editMode:Bool = false
-    
-    //    var insertedIndexPaths: [IndexPath]!
-    //    var deletedIndexPaths : [IndexPath]!
-    //    var updatedIndexPaths : [IndexPath]!
-    //
-    
     var fetchedResultController:NSFetchedResultsController<Photo>!
     
     @IBAction func excuteAction(_ sender: AnyObject) {
@@ -53,9 +47,13 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                     print("Error removing selected photos: \(error)")
                 }
             }
+            performUIUpdatesOnMain {
+                self.toggleEditMode(edit: false)
+            }
             
         } else {
-            removeMeta()
+            toggleLoadingState(loading: true)
+            removeAndGetNewPhotos()
 //            toggleLoadingState(loading: true)
 //            getPhotosFromFlickr(locID: location.objectID)
         }
@@ -82,6 +80,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        let center = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+        let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 25.0, longitudeDelta: 25.0))
+        mapView.setRegion(region, animated: true)
+
         
         getPhotosForCurrentLocation()
         
@@ -128,16 +130,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     }
     
     
-    func showPhotos() {
-        print("Job Done")
-        //getPhotosForCurrentLocation()
-        performUIUpdatesOnMain {
-            self.toggleLoadingState(loading: false)
-            //self.collectionView.reloadData()
-        }
-        
-    }
-    
     func getImageForPhoto(index:Int, photoID: NSManagedObjectID) {
         self.bgContext.perform {
             do {
@@ -154,33 +146,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         }
     }
     
-    func getImageForPhoto2(index:Int, completionHandler: @escaping (_ success:Bool, _ photoData:NSData?)-> Void) {
-        if photoResults.count > index {
-            DispatchQueue.global(qos: .userInitiated).async {
-                
-                if let urlString = self.photoResults[index]["url_m"] as? String {
-                    if let imageData = NSData(contentsOf: URL(string: urlString)!) {
-                        DispatchQueue.main.async {
-                            completionHandler(true, imageData)
-                        }
-                        
-                    }
-                    DispatchQueue.main.async {
-                        completionHandler(false, nil)
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        completionHandler(false, nil)
-                    }
-                }
-                
-            }
-        }
-    }
-    
-    
-    func removeMeta() {
-        toggleLoadingState(loading: true)
+    func removeAndGetNewPhotos() {
         var photosID:[NSManagedObjectID] = []
         for photo in fetchedResultController.fetchedObjects! {
             photosID.append(photo.objectID)
@@ -206,7 +172,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     
     func getPhotosFromFlickr(locID:NSManagedObjectID) {
-        self.flickr.getPhotosForLocation(location: location) { (success, results, meta, errorString) in
+        self.flickr.getPhotosForLocation(location: location, meta: meta) { (success, results, meta, errorString) in
             if success {
                 var loc:Pin!
                 
@@ -239,6 +205,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                     var newMeta = Meta(context: self.bgContext)
                     newMeta.page = Int32(meta["page"]!)
                     newMeta.pages = Int32(meta["pages"]!)
+                    self.meta = newMeta
                     
                     newMeta.pin = loc
                     loc.meta = newMeta
@@ -292,7 +259,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoAlbumCell", for: indexPath) as! PhotoAlbumCell
-        cell.image.isHidden = true
+        cell.image.image = UIImage(named: "placeholder")
         configureCell(cell: cell, indexPath: indexPath)
         return cell
     }
@@ -306,7 +273,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         } else {
             cell.activityIndicator.startAnimating()
             cell.activityIndicator.isHidden = false
-            cell.image.image = UIImage(named: "placeholder")
             cell.image.isHidden = false
             cell.backgroundColor = UIColor.orange
             if photoResults.count > indexPath.item {
@@ -391,8 +357,6 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         default: break
         }
     }
-    
-    
     
     
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {

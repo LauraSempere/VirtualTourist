@@ -84,7 +84,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         mapView.setRegion(region, animated: true)
         
         
-        getPhotosForCurrentLocation()
+        //getPhotosForCurrentLocation()
         
         if (fetchedResultController.fetchedObjects?.count)! > 0 {
             toggleLoadingState(loading: false)

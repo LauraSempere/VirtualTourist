@@ -20,16 +20,17 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     var savedPins = [Pin]()
     
     override func viewDidLoad() {
-        print(mapView.region)
-        print("-----------")
         super.viewDidLoad()
         getAndDisplayPins()
         if let longitude = UserDefaults.standard.value(forKey: "longitude") as? CLLocationDegrees {
             if let latitude = UserDefaults.standard.value(forKey: "latitude") as? CLLocationDegrees {
                 if let deltaLongitude = UserDefaults.standard.value(forKey: "deltaLongitude") as? CLLocationDegrees {
                     if let deltaLatitude = UserDefaults.standard.value(forKey: "deltaLatitude") as? CLLocationDegrees{
-                        let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), span: MKCoordinateSpan(latitudeDelta: deltaLatitude, longitudeDelta: deltaLongitude))
+                        let center = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                        let span = MKCoordinateSpan(latitudeDelta: deltaLatitude, longitudeDelta: deltaLongitude)
+                        let region = MKCoordinateRegion(center: center, span: span)
                         mapView.setRegion(region, animated: true)
+                        mapView.setCenter(center, animated: true)
                         
                     }
                 }
